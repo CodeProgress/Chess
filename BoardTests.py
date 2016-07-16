@@ -6,6 +6,7 @@ import Pieces
 class Tests(unittest.TestCase):
     def setUp(self):
         self.board = Board.ChessBoard()
+        self.longMessage = True
 
     def tearDown(self):
         self.board = None
@@ -60,13 +61,13 @@ class Tests(unittest.TestCase):
         self.board.execute_move('d1', 'd3')    # White Queen
         self.board.execute_move('c8', 'b7')    # Black Bishop
 
-        self.assertEquals(Pieces.Pawn, type(self.board.get_piece_on_square('d4')),
+        self.assertEquals(Pieces.Pawn, type(self.board.get_contents_of_square('d4')),
                           "Square does not contain the correct piece")
-        self.assertEquals(Pieces.Pawn, type(self.board.get_piece_on_square('b5')),
+        self.assertEquals(Pieces.Pawn, type(self.board.get_contents_of_square('b5')),
                           "Square does not contain the correct piece")
-        self.assertEquals(Pieces.Queen, type(self.board.get_piece_on_square('d3')),
+        self.assertEquals(Pieces.Queen, type(self.board.get_contents_of_square('d3')),
                           "Square does not contain the correct piece")
-        self.assertEquals(Pieces.Bishop, type(self.board.get_piece_on_square('b7')),
+        self.assertEquals(Pieces.Bishop, type(self.board.get_contents_of_square('b7')),
                           "Square does not contain the correct piece")
 
         self.assertTrue(self.board.is_square_empty('d2'), "Expected square to be empty")
@@ -74,4 +75,27 @@ class Tests(unittest.TestCase):
         self.assertTrue(self.board.is_square_empty('d1'), "Expected square to be empty")
         self.assertTrue(self.board.is_square_empty('c8'), "Expected square to be empty")
 
+    def test_piece_current_square_value_updates_after_executing_move(self):
+        self.board.execute_move('c2', 'c4')  # White Pawn
+        self.assertEquals('c4', self.board.get_contents_of_square('c4').current_square,
+                          "Piece's current square incorrect after moving to a new square")
+
+        self.board.execute_move('b8', 'c6')  # Black Knight
+        self.assertEquals('c6', self.board.get_contents_of_square('c6').current_square,
+                          "Piece's current square incorrect after moving to a new square")
+
+    def test_legal_knight_moves(self):
+        # A knight has 8 possible target squares it can jump to:
+        #     Forward two then left or right one
+        #     Left two then forward or backward one
+        #     Right two then forward or backward one
+        #     Backward two then left or right one
+        # The knight may only jump to the above target squares if:
+        #     The target square is on the board
+        #     The target square is empty
+        #     The target square contains an opponants piece
+        pass
+
+    def test_origin_square_is_different_than_destination_square(self):
+        pass
 

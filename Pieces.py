@@ -31,7 +31,10 @@ class Piece(object):
 class Pawn(Piece):
     # Move forward one if square in front is empty
     # move forward two if on starting square and both squares in front are empty
-    # if moving forward two, create an en passant square on the bypassed square
+    # en passant:
+    #     if moving forward two, create an en passant square on the bypassed square
+    #     if attacking an en passant target square, make sure to clear the square containing the opponents pawn
+    #         (different square than where attacking pawn ends up)
     # if an opponent's piece is diagonal, the pawn may move one square diagonally and replace the piece on that square.
     # if moving to last row, promote piece to Queen, Rook, Knight or Bishop.  All are valid moves, player should be prompted to choose.
     # any pawn move should reset the 50 move game counter.  (This might be better handled in the Rules class or FEN)
@@ -75,7 +78,7 @@ class Knight(Piece):
         if not board.is_square_empty(destination_square):
             return False
 
-        contentsOfDestinationSquare = board.get_piece_on_square(destination_square)
+        contentsOfDestinationSquare = board.get_contents_of_square(destination_square)
         if contentsOfDestinationSquare != board.EMPTY_SQUARE and contentsOfDestinationSquare.color == self.color:
             return False
 
