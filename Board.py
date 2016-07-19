@@ -75,6 +75,9 @@ class ChessBoard:
     def is_square_empty(self, square):
         return self.get_contents_of_square(square) == self.EMPTY_SQUARE
 
+    def is_coordinate_empty(self, row, col):
+        return self.board[row, col] == self.EMPTY_SQUARE
+
     def is_coordinate_on_board(self, row, col):
         if (0 <= col <= 7) and (0 <= row <= 7):
             return True
@@ -97,14 +100,58 @@ class ChessBoard:
         row, col = self.get_numerical_coordinates_from_algebratic_notation(square)
         return self.board[row][col]
 
-    def validate_move(self, originSquare, destinationSquare):
+    def is_empty_diagonal_from(self, originSquare, destinationSquare):
+        # these should already be checked
+        assert self.is_square_on_board(originSquare) and self.is_square_on_board(destinationSquare)
+        assert originSquare != destinationSquare
+
+        originSqRow, originSqCol = self.get_numerical_coordinates_from_algebratic_notation(originSquare)
+        destSqRow, destSqCol = self.get_numerical_coordinates_from_algebratic_notation(destinationSquare)
+
+        rowDif = abs(originSqRow-destSqRow)
+
+        if rowDif != abs(originSqCol-destSqCol):
+            return False
+
+        # now check if that diagonal is empty
+        if originSqRow > destSqRow:
+            # count down
+            inBetweenSqRowCoords = range(originSqRow-1, destSqRow, -1)
+        else:
+            # count up
+            inBetweenSqRowCoords = range(originSqRow+1, destSqRow)
+
+        if originSqCol > destSqCol:
+            # count down
+            inBetweenSqColCoords = range(originSqCol-1, destSqCol, -1)
+        else:
+            # count up
+            inBetweenSqColCoords = range(originSqCol+1, destSqCol)
+
+        assert len(inBetweenSqRowCoords) == len(inBetweenSqColCoords)
+
+        for i in range(len(inBetweenSqRowCoords)):
+            if not self.is_coordinate_empty(inBetweenSqRowCoords[i], inBetweenSqColCoords[i]):
+                return False
+        return True
+
+    def is_valid_move(self, originSquare, destinationSquare):
         # This is the super method that must incorporate all of the rules of the game
         # possible overlap between this and execute_move method.
         # perhaps this is better handled in the game/rules class (or at least the non-piece specific parts)
         # things to validate:
-        # originSquare contains a piece and is not empty
-        # originSquare and destinatioSquare are different
-        # is legal move from the piece's perspective: originPiece.is_legal_move(self, destinationSquare)
+
+        if originSquare == destinationSquare:
+            return False
+
+        # is legal move from the piece's perspective:
+        if self.is_square_empty(originSquare):
+            return False
+        originPiece = self.get_contents_of_square(originSquare)
+        if not originPiece.is_legal_move(self, destinationSquare):
+            return False
+        return True
+
         # is legal move from game perspective:
         #     does the current move put the king in check?
         #     is the king in check and therefore the move must eliminate check
@@ -115,10 +162,10 @@ class ChessBoard:
         pass
 
     def execute_move(self, originSquare, destinationSquare):
-        # blindly executes move without regard to legality
-        originPiece = self.get_contents_of_square(originSquare)
-        self.clear_square(originSquare)
-        self.update_square_with_piece(originPiece, destinationSquare)
+        if self.is_valid_move(originSquare, destinationSquare):
+            originPiece = self.get_contents_of_square(originSquare)
+            self.clear_square(originSquare)
+            self.update_square_with_piece(originPiece, destinationSquare)
 
     def __str__(self):
         boardAsStr = ''

@@ -16,6 +16,19 @@ class Piece(object):
         # NEED TO FINISH IMPLEMENTING IN ALL SUB CLASSES and then re-add "raise NotImplementedError"
         return True
 
+    def is_viable_square_to_move_to(self, board, destination_square):
+        if not board.is_square_on_board(destination_square):
+            return False
+
+        contentsOfDestinationSquare = board.get_contents_of_square(destination_square)
+        if contentsOfDestinationSquare != board.EMPTY_SQUARE and contentsOfDestinationSquare.color == self.color:
+            return False
+
+        if self.current_square == destination_square:
+            return False
+
+        return True
+
     def is_legal_game_state(self, board):
         # To final check for all legal piece moves is whether or not the king of the same color is now in check
         # if a move leaves that color's king in check, it is illegal
@@ -71,15 +84,7 @@ class Knight(Piece):
     #     The target square contains an opponants piece
 
     def is_legal_move(self, board, destination_square):
-        #     The target square is on the board
-        if not board.is_square_on_board(destination_square):
-            return False
-
-        if not board.is_square_empty(destination_square):
-            return False
-
-        contentsOfDestinationSquare = board.get_contents_of_square(destination_square)
-        if contentsOfDestinationSquare != board.EMPTY_SQUARE and contentsOfDestinationSquare.color == self.color:
+        if not self.is_viable_square_to_move_to(board, destination_square):
             return False
 
         # is distance in L
@@ -105,6 +110,19 @@ class Bishop(Piece):
     #     The edge of the board
     #     a square directly before a piece of its own color
     #     a square containing an opponent's piece.
+
+    def is_diagonal_from(self, destination_square):
+        pass
+
+    def is_legal_move(self, board, destination_square):
+        if not self.is_viable_square_to_move_to(board, destination_square):
+            return False
+
+        if not board.is_empty_diagonal_from(self.current_square, destination_square):
+            return False
+
+        return True
+
     def __str__(self):
         if self.color == 'w':
             return 'B'

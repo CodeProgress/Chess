@@ -85,17 +85,29 @@ class Tests(unittest.TestCase):
                           "Piece's current square incorrect after moving to a new square")
 
     def test_legal_knight_moves(self):
-        # A knight has 8 possible target squares it can jump to:
-        #     Forward two then left or right one
-        #     Left two then forward or backward one
-        #     Right two then forward or backward one
-        #     Backward two then left or right one
-        # The knight may only jump to the above target squares if:
-        #     The target square is on the board
-        #     The target square is empty
-        #     The target square contains an opponants piece
+        pass
+
+    def test_illegal_knight_moves(self):
+        self.board.execute_move('b8', 'b6')
+        self.assertEquals(Pieces.Knight, type(self.board.get_contents_of_square('b8')),
+                          "Square does not contain the correct piece")
+        self.assertTrue(self.board.is_square_empty('c6'))
+
+        # ADD MORE TESTS
+
+    def test_legal_bishop_moves(self):
+        pass
+
+    def test_illegal_bishop_moves(self):
         pass
 
     def test_origin_square_is_different_than_destination_square(self):
         pass
 
+    def test_is_empty_diagonal_from(self):
+        # consider splitting out into two methods: is diagonal, is empty diagonal
+        pass
+
+    def test_is_empty_orthogonal_from(self):
+        # consider splitting out into two methods: is orthogonal, is empty orthogonal
+        pass
