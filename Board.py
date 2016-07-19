@@ -14,10 +14,10 @@ class ChessBoard:
     ALL_COLS = 'abcdefgh'
     ALL_ROWS = '12345678'
     EMPTY_SQUARE = '~'
-
     def __init__(self):
         self.create_starting_position()
         self.pieces_off_the_board = []
+        self.enPassantTargetSquare = ''
 
     def create_starting_position(self):
         self.create_empty_board()
@@ -33,6 +33,7 @@ class ChessBoard:
 
     def add_piece_to_board(self, piece, color, squares):
         for sq in squares:
+            assert self.is_square_on_board(sq)
             self.update_square_with_piece(piece(color, sq), sq)
 
     def add_standard_initial_pieces_to_board(self):
@@ -60,31 +61,58 @@ class ChessBoard:
         self.add_piece_to_board(Pieces.King, 'w', ['e1'])
         self.add_piece_to_board(Pieces.King, 'b', ['e8'])
 
-    def get_numerical_coordinates_from_algebratic_notation(self, letterFollowedByNumber):
-        assert type(letterFollowedByNumber) == str and len(letterFollowedByNumber) == 2
-        col = ord(letterFollowedByNumber[0]) - 97   # ord('a') == 97
-        row = ord(letterFollowedByNumber[1]) - 49   # ord('1') == 49
-        assert 0 <= col <= 7
+    def get_square_from_row_and_col_coordinates(self, row, col):
+        assert type(row) == int and type(col) == int
         assert 0 <= row <= 7
-        return row, col   # returns a tuple
+        assert 0 <= col <= 7
+        rowAsChr = chr(row + 49)
+        colAsChr = chr(col + 97)
+        square = colAsChr + rowAsChr
+        assert self.is_square_on_board(square)
+        return square
+
+    def get_row_and_col_coordinates_from_square(self, square):
+        return self.get_row_number_from_square(square), self.get_col_number_from_square(square)
+
+    def get_row_number_from_square(self, square):
+        assert self.is_valid_square(square)
+        row = ord(square[1]) - 49  # ord('1') == 49
+        return row
+
+    def get_col_number_from_square(self, square):
+        assert self.is_valid_square(square)
+        col = ord(square[0]) - 97  # ord('a') == 97
+        return col
+
+    def is_valid_square(self, square):
+        if type(square) != str:
+            return False
+        if len(square) != 2:
+            return False
+        row = ord(square[1]) - 49  # ord('1') == 49
+        col = ord(square[0]) - 97  # ord('a') == 97
+        return (0 <= row <= 7) and (0 <= col <= 7)
 
     def is_square_on_board(self, square):
-        row, col = self.get_numerical_coordinates_from_algebratic_notation(square)
+        if not self.is_valid_square(square):
+            return False
+        row, col = self.get_row_and_col_coordinates_from_square(square)
         return self.is_coordinate_on_board(row, col)
 
     def is_square_empty(self, square):
         return self.get_contents_of_square(square) == self.EMPTY_SQUARE
 
     def is_coordinate_empty(self, row, col):
-        return self.board[row, col] == self.EMPTY_SQUARE
+        assert self.is_coordinate_on_board(row, col)
+        return self.board[row][col] == self.EMPTY_SQUARE
 
     def is_coordinate_on_board(self, row, col):
-        if (0 <= col <= 7) and (0 <= row <= 7):
+        if (0 <= row <= 7) and (0 <= col <= 7):
             return True
         return False
 
     def assign_value_to_square(self, value, square):
-        row, col = self.get_numerical_coordinates_from_algebratic_notation(square)
+        row, col = self.get_row_and_col_coordinates_from_square(square)
         self.board[row][col] = value
 
     def clear_square(self, square):
@@ -92,47 +120,81 @@ class ChessBoard:
             self.pieces_off_the_board.append(self.get_contents_of_square(square))
             self.assign_value_to_square(self.EMPTY_SQUARE, square)
 
+    def update_en_passant_target_square(self, newEnPassantSquare):
+        assert self.is_valid_square(newEnPassantSquare)
+        assert self.is_square_empty(newEnPassantSquare)
+        self.enPassantTargetSquare = newEnPassantSquare
+
     def update_square_with_piece(self, piece, square):
         self.assign_value_to_square(piece, square)
         piece.current_square = square
 
     def get_contents_of_square(self, square):
-        row, col = self.get_numerical_coordinates_from_algebratic_notation(square)
+        row, col = self.get_row_and_col_coordinates_from_square(square)
         return self.board[row][col]
+
+    def is_one_square_away(self, originSquare, destinationSquare):
+        originSqRow, originSqCol = self.get_row_and_col_coordinates_from_square(originSquare)
+        destSqRow, destSqCol = self.get_row_and_col_coordinates_from_square(destinationSquare)
+        return abs(originSqRow - destSqRow) <= 1 and abs(originSqCol-destSqCol) <= 1
 
     def is_empty_diagonal_from(self, originSquare, destinationSquare):
         # these should already be checked
         assert self.is_square_on_board(originSquare) and self.is_square_on_board(destinationSquare)
         assert originSquare != destinationSquare
 
-        originSqRow, originSqCol = self.get_numerical_coordinates_from_algebratic_notation(originSquare)
-        destSqRow, destSqCol = self.get_numerical_coordinates_from_algebratic_notation(destinationSquare)
+        originSqRow, originSqCol = self.get_row_and_col_coordinates_from_square(originSquare)
+        destSqRow, destSqCol = self.get_row_and_col_coordinates_from_square(destinationSquare)
 
+        # check if diagonal
         rowDif = abs(originSqRow-destSqRow)
-
         if rowDif != abs(originSqCol-destSqCol):
             return False
 
         # now check if that diagonal is empty
         if originSqRow > destSqRow:
             # count down
-            inBetweenSqRowCoords = range(originSqRow-1, destSqRow, -1)
+            inbetweenSqRowCoords = range(originSqRow-1, destSqRow, -1)
         else:
             # count up
-            inBetweenSqRowCoords = range(originSqRow+1, destSqRow)
+            inbetweenSqRowCoords = range(originSqRow+1, destSqRow)
 
         if originSqCol > destSqCol:
             # count down
-            inBetweenSqColCoords = range(originSqCol-1, destSqCol, -1)
+            inbetweenSqColCoords = range(originSqCol-1, destSqCol, -1)
         else:
             # count up
-            inBetweenSqColCoords = range(originSqCol+1, destSqCol)
+            inbetweenSqColCoords = range(originSqCol+1, destSqCol)
 
-        assert len(inBetweenSqRowCoords) == len(inBetweenSqColCoords)
+        assert len(inbetweenSqRowCoords) == len(inbetweenSqColCoords)
 
-        for i in range(len(inBetweenSqRowCoords)):
-            if not self.is_coordinate_empty(inBetweenSqRowCoords[i], inBetweenSqColCoords[i]):
+        for i in range(len(inbetweenSqRowCoords)):
+            if not self.is_coordinate_empty(inbetweenSqRowCoords[i], inbetweenSqColCoords[i]):
                 return False
+        return True
+
+    def is_empty_orthogonal_from(self, originSquare, destinationSquare):
+        # these should already be checked
+        assert self.is_square_on_board(originSquare) and self.is_square_on_board(destinationSquare)
+        assert originSquare != destinationSquare
+
+        originSqRow, originSqCol = self.get_row_and_col_coordinates_from_square(originSquare)
+        destSqRow, destSqCol = self.get_row_and_col_coordinates_from_square(destinationSquare)
+
+        if originSqRow == destSqRow:
+            fixedRow = originSqRow
+            rangeToCheck = range(min(originSqCol, destSqCol)+1, max(originSqCol, destSqCol))
+            for col in rangeToCheck:
+                if not self.is_coordinate_empty(fixedRow, col):
+                    return False
+        elif originSqCol == destSqCol:
+            fixedCol = originSqCol
+            rangeToCheck = range(min(originSqRow, destSqRow)+1, max(originSqRow, destSqRow))
+            for row in rangeToCheck:
+                if not self.is_coordinate_empty(row, fixedCol):
+                    return False
+        else:
+            return False    # the squares are not orthogonal
         return True
 
     def is_valid_move(self, originSquare, destinationSquare):
