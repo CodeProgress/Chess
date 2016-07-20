@@ -18,6 +18,7 @@ class ChessBoard:
         self.create_starting_position()
         self.pieces_off_the_board = []
         self.enPassantTargetSquare = ''
+        self.resetEnPassantTargetSquare = False
 
     def create_starting_position(self):
         self.create_empty_board()
@@ -121,8 +122,6 @@ class ChessBoard:
             self.assign_value_to_square(self.EMPTY_SQUARE, square)
 
     def update_en_passant_target_square(self, newEnPassantSquare):
-        assert self.is_valid_square(newEnPassantSquare)
-        assert self.is_square_empty(newEnPassantSquare)
         self.enPassantTargetSquare = newEnPassantSquare
 
     def update_square_with_piece(self, piece, square):
@@ -197,11 +196,18 @@ class ChessBoard:
             return False    # the squares are not orthogonal
         return True
 
+    def resetEnPassantTargetSquareIfNeeded(self):
+        # reset the enpassant square (makes sure it's only available for one turn)
+        if self.resetEnPassantTargetSquare:
+            self.update_en_passant_target_square('')
+            self.resetEnPassantTargetSquare = False
+        if self.enPassantTargetSquare != '':
+            self.resetEnPassantTargetSquare = True
+
     def is_valid_move(self, originSquare, destinationSquare):
         # This is the super method that must incorporate all of the rules of the game
         # possible overlap between this and execute_move method.
         # perhaps this is better handled in the game/rules class (or at least the non-piece specific parts)
-        # things to validate:
 
         if originSquare == destinationSquare:
             return False
@@ -212,22 +218,26 @@ class ChessBoard:
         originPiece = self.get_contents_of_square(originSquare)
         if not originPiece.is_legal_move(self, destinationSquare):
             return False
-        return True
 
         # is legal move from game perspective:
-        #     does the current move put the king in check?
-        #     is the king in check and therefore the move must eliminate check
+        #     is the king in check?
         #     is the move a castle?  Will require castling validation and a different execute move that moves two pieces at once
-        #     is the game already over?  (This should actually be handled before ever reaching this point)
-        #     50 move rule
-        #     3 fold repetition
-        pass
+        #         maybe move this to the King class, handle with a move two to the right/left,
+        #         update board to handle rook move (like en passant method)
+        return True
 
     def execute_move(self, originSquare, destinationSquare):
         if self.is_valid_move(originSquare, destinationSquare):
+            self.resetEnPassantTargetSquareIfNeeded()
             originPiece = self.get_contents_of_square(originSquare)
             self.clear_square(originSquare)
             self.update_square_with_piece(originPiece, destinationSquare)
+
+            # Check ending conditions:
+            #     Checkmate
+            #     Stalemate
+            #     50 move rule
+            #     3 fold repetition
 
     def __str__(self):
         boardAsStr = ''

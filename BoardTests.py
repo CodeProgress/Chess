@@ -379,19 +379,96 @@ class Tests(unittest.TestCase):
         self.board.execute_move('e1', 'e2')
         self.verify_illegal_move_is_not_made(Pieces.King, 'e2', 'c4')
 
+    def test_legal_pawn_moves(self):
+        self.verify_legal_move(Pieces.Pawn, 'a2', 'a4')
+        self.verify_legal_move(Pieces.Pawn, 'b2', 'b4')
+        self.verify_legal_move(Pieces.Pawn, 'c2', 'c4')
+        self.verify_legal_move(Pieces.Pawn, 'd2', 'd4')
+        self.verify_legal_move(Pieces.Pawn, 'e2', 'e3')
+        self.verify_legal_move(Pieces.Pawn, 'f2', 'f3')
+        self.verify_legal_move(Pieces.Pawn, 'g2', 'g3')
+        self.verify_legal_move(Pieces.Pawn, 'h2', 'h4')
+        self.verify_legal_move(Pieces.Pawn, 'a4', 'a5')
+        self.verify_legal_move(Pieces.Pawn, 'a5', 'a6')
+        self.verify_legal_move(Pieces.Pawn, 'a6', 'b7')  # capture
+        self.verify_legal_move(Pieces.Pawn, 'b4', 'b5')
+        self.verify_legal_move(Pieces.Pawn, 'a7', 'a5')  # prepare en passant square
+        self.verify_legal_move(Pieces.Pawn, 'b5', 'a6')
+        self.assertTrue(self.board.is_square_empty('a5'),
+                        "An en passant capture should remove the pawn that created the en passant target square")
+        self.verify_legal_move(Pieces.Pawn, 'h4', 'h5')
+        self.verify_legal_move(Pieces.Pawn, 'h5', 'h6')
+        self.verify_legal_move(Pieces.Pawn, 'g7', 'g5')
+        self.verify_legal_move(Pieces.Pawn, 'g5', 'g4')
+        self.verify_legal_move(Pieces.Pawn, 'g4', 'f3')
+        self.verify_legal_move(Pieces.Pawn, 'c7', 'c5')
+        self.verify_legal_move(Pieces.Pawn, 'c5', 'd4')
+        self.verify_legal_move(Pieces.Pawn, 'd4', 'e3')
+        self.verify_legal_move(Pieces.Pawn, 'e3', 'e2')
+
+    def test_illegal_pawn_moves(self):
+        self.verify_illegal_move_is_not_made(Pieces.Pawn, 'b2', 'b5')
+        self.verify_illegal_move_is_not_made(Pieces.Pawn, 'b2', 'b6')
+        self.verify_illegal_move_is_not_made(Pieces.Pawn, 'b2', 'b1')
+        self.verify_illegal_move_is_not_made(Pieces.Pawn, 'b2', 'a2')
+        self.verify_illegal_move_is_not_made(Pieces.Pawn, 'b2', 'a3')
+        self.verify_illegal_move_is_not_made(Pieces.Pawn, 'b2', 'c3')
+        self.verify_illegal_move_is_not_made(Pieces.Pawn, 'b2', 'c4')
+        self.verify_illegal_move_is_not_made(Pieces.Pawn, 'b2', 'a4')
+        self.board.execute_move('a2', 'a4')
+        self.board.execute_move('b2', 'b4')
+        self.board.execute_move('c2', 'c3')
+        self.board.execute_move('d2', 'd4')
+        self.board.execute_move('e2', 'e4')
+        self.board.execute_move('e4', 'e5')
+        self.board.execute_move('e5', 'e6')
+        self.board.execute_move('f2', 'f4')
+        self.board.execute_move('g2', 'g3')
+        self.board.execute_move('f4', 'f5')
+
+        self.verify_illegal_move_is_not_made(Pieces.Pawn, 'e7', 'e5')  # can't jump over opponents piece to empty square
+        self.verify_illegal_move_is_not_made(Pieces.Pawn, 'e7', 'f6')
+        self.verify_illegal_move_is_not_made(Pieces.Pawn, 'e7', 'e6')
+        self.board.execute_move('d7', 'd5')
+        self.verify_illegal_move_is_not_made(Pieces.Pawn, 'e6', 'd7')
+        self.verify_illegal_move_is_not_made(Pieces.Pawn, 'd5', 'd4')
+        self.board.execute_move('c3', 'c4')
+        self.board.execute_move('c4', 'c5')
+        self.verify_illegal_move_is_not_made(Pieces.Pawn, 'd5', 'c4')
+        self.verify_illegal_move_is_not_made(Pieces.Pawn, 'd5', 'c5')
+        self.verify_illegal_move_is_not_made(Pieces.Pawn, 'd5', 'e6')
+        self.verify_illegal_move_is_not_made(Pieces.Pawn, 'd5', 'd6')
+        self.verify_illegal_move_is_not_made(Pieces.Pawn, 'd5', 'd7')
+
+        self.board.execute_move('b7', 'b5')  # create en passant square
+        self.board.execute_move('c5', 'c6')
+        self.verify_illegal_move_is_not_made(Pieces.Pawn, 'a7', 'b6')  # cannot use your own en passant square
+        self.verify_illegal_move_is_not_made(Pieces.Pawn, 'f5', 'e6')
+        self.verify_illegal_move_is_not_made(Pieces.Pawn, 'g3', 'h2')
+        self.verify_illegal_move_is_not_made(Pieces.Pawn, 'h2', 'g3')
+
     def test_invalid_move_when_origin_and_destination_are_equal(self):
         self.assertFalse(self.board.is_valid_move('e2', 'e2'))
 
+    def test_en_passant_rules(self):
+        self.assertEquals('', self.board.enPassantTargetSquare)
+        self.board.execute_move('e2', 'e4')
+        self.assertEquals('e3', self.board.enPassantTargetSquare)
+        self.board.execute_move('e7', 'e5')
+        self.assertEquals('e6', self.board.enPassantTargetSquare)
+        self.board.execute_move('d2', 'd3')
+        self.assertEquals('', self.board.enPassantTargetSquare)
 
 # ---- Unfinished Tests ---- #
 
-    def test_legal_pawn_moves(self):
-        pass
-
-    def test_illegal_pawn_moves(self):
+    def test_pawn_promotion(self):
+        # promote to queen, rook, knight, bishop, then try moving those newly minted pieces (make sure color is correct)
         pass
 
     def test_illegal_king_moves_dealing_with_check(self):
+        pass
+
+    def test_illegal_moves_that_leave_the_king_in_check(self):
         pass
 
     def test_legal_castling_moves(self):

@@ -84,6 +84,9 @@ class Pawn(Piece):
     def is_forward_num_of_squares(self, board, destination_square, numSquares):
         if not self.is_forward_move(board, destination_square):
             return False
+        # check if any movement besides straight forward
+        if abs(board.get_col_number_from_square(self.current_square) - board.get_col_number_from_square(destination_square)) != 0:
+            return False
         return abs(board.get_row_number_from_square(self.current_square) - board.get_row_number_from_square(destination_square)) == numSquares
 
     def is_forward_one_square(self, board, destination_square):
@@ -93,9 +96,13 @@ class Pawn(Piece):
         return self.is_forward_num_of_squares(board, destination_square, 2)
 
     def is_forward_and_diagonal_one_square(self, board, destination_square):
-        if not self.is_forward_one_square(board, destination_square):
+        if not self.is_forward_move(board, destination_square):
             return False
-        return abs(board.get_col_from_square(self.current_square) - board.get_col_from_square(destination_square)) == 1
+        if abs(board.get_row_number_from_square(self.current_square) - board.get_row_number_from_square(destination_square)) != 1:
+            return False
+        if abs(board.get_col_number_from_square(self.current_square) - board.get_col_number_from_square(destination_square)) != 1:
+            return False
+        return True
 
     def get_square_one_forward(self, board):
         row, col = board.get_row_and_col_coordinates_from_square(self.current_square)
@@ -110,7 +117,13 @@ class Pawn(Piece):
             return False
         if self.is_square_occupied_by_opponent_piece(board, destination_square):
             return True
-        return destination_square == board.enPassantTargetSquare
+        if destination_square == board.enPassantTargetSquare:
+            # remove the pawn that created the en passant target square
+            pawnToClearRow = board.get_row_number_from_square(self.current_square)
+            pawnToClearCol = board.get_col_number_from_square(destination_square)
+            board.clear_square(board.get_square_from_row_and_col_coordinates(pawnToClearRow, pawnToClearCol))
+            return True
+        return False
 
     def is_legal_move(self, board, destination_square):
         if not self.is_viable_square_to_move_to(board, destination_square):
@@ -127,6 +140,7 @@ class Pawn(Piece):
             if not board.is_square_empty(destination_square):
                 return False
             board.update_en_passant_target_square(self.get_square_one_forward(board))
+            board.resetEnPassantTargetSquare = False  # to account for back to back en passant making moves
             return True
 
         return self.is_valid_square_to_attack(board, destination_square)
