@@ -11,6 +11,26 @@ class Piece(object):
         assert self.is_white_piece() or self.is_black_piece()
         self.current_square = currentSquare
 
+    # abstract methods
+    def all_possible_moves(self, board):
+        raise NotImplementedError
+
+    def all_legal_moves(self, board):
+        raise NotImplementedError
+
+    def is_legal_move(self, board, destination_square):
+        raise NotImplementedError
+
+    def execute_move(self, board, destination_square):
+        self.special_move_maintenance(board, destination_square)
+        originSquare = self.current_square
+        board.clear_square(originSquare)
+        board.update_square_with_piece(self, destination_square)
+        self.current_square = destination_square
+
+    def special_move_maintenance(self, board, destination_square):
+        pass
+
     def is_white_piece(self):
         return self.color == self.WHITE
 
@@ -24,15 +44,6 @@ class Piece(object):
         if board.is_square_empty(square):
             return False
         return self.is_opponent_piece(board.get_contents_of_square(square))
-
-    def all_possible_moves(self, board):
-        raise NotImplementedError
-
-    def all_legal_moves(self, board):
-        raise NotImplementedError
-
-    def is_legal_move(self, board, destination_square):
-        raise NotImplementedError
 
     def is_viable_square_to_move_to(self, board, destination_square):
         if not board.is_square_on_board(destination_square):
@@ -69,6 +80,18 @@ class Pawn(Piece):
     # if an opponent's piece is diagonal, the pawn may move one square diagonally and replace the piece on that square.
     # if moving to last row, promote piece to Queen, Rook, Knight or Bishop.  All are valid moves, player should be prompted to choose.
     # any pawn move should reset the 50 move game counter.  (This might be better handled in the Rules class or FEN)
+
+    def special_move_maintenance(self, board, destination_square):
+        if destination_square == board.enPassantTargetSquare:
+            # remove the pawn that created the en passant target square
+            pawnToClearRow = board.get_row_number_from_square(self.current_square)
+            pawnToClearCol = board.get_col_number_from_square(destination_square)
+            board.clear_square(board.get_square_from_row_and_col_coordinates(pawnToClearRow, pawnToClearCol))
+
+        elif self.is_forward_two_squares(board, destination_square) and self.is_on_starting_square(board):
+            board.update_en_passant_target_square(self.get_square_one_forward(board))
+            board.resetEnPassantTargetSquare = False  # to account for back to back en passant making moves
+
     def is_on_starting_square(self, board):
         currentRow = board.get_row_number_from_square(self.current_square)
         if self.is_white_piece():
@@ -117,13 +140,7 @@ class Pawn(Piece):
             return False
         if self.is_square_occupied_by_opponent_piece(board, destination_square):
             return True
-        if destination_square == board.enPassantTargetSquare:
-            # remove the pawn that created the en passant target square
-            pawnToClearRow = board.get_row_number_from_square(self.current_square)
-            pawnToClearCol = board.get_col_number_from_square(destination_square)
-            board.clear_square(board.get_square_from_row_and_col_coordinates(pawnToClearRow, pawnToClearCol))
-            return True
-        return False
+        return destination_square == board.enPassantTargetSquare
 
     def is_legal_move(self, board, destination_square):
         if not self.is_viable_square_to_move_to(board, destination_square):
@@ -139,8 +156,6 @@ class Pawn(Piece):
                 return False
             if not board.is_square_empty(destination_square):
                 return False
-            board.update_en_passant_target_square(self.get_square_one_forward(board))
-            board.resetEnPassantTargetSquare = False  # to account for back to back en passant making moves
             return True
 
         return self.is_valid_square_to_attack(board, destination_square)

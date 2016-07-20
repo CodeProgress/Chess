@@ -126,7 +126,6 @@ class ChessBoard:
 
     def update_square_with_piece(self, piece, square):
         self.assign_value_to_square(piece, square)
-        piece.current_square = square
 
     def get_contents_of_square(self, square):
         row, col = self.get_row_and_col_coordinates_from_square(square)
@@ -228,10 +227,9 @@ class ChessBoard:
 
     def execute_move(self, originSquare, destinationSquare):
         if self.is_valid_move(originSquare, destinationSquare):
-            self.resetEnPassantTargetSquareIfNeeded()
             originPiece = self.get_contents_of_square(originSquare)
-            self.clear_square(originSquare)
-            self.update_square_with_piece(originPiece, destinationSquare)
+            originPiece.execute_move(self, destinationSquare)
+            self.resetEnPassantTargetSquareIfNeeded()
 
             # Check ending conditions:
             #     Checkmate

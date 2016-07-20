@@ -461,24 +461,24 @@ class Tests(unittest.TestCase):
 
 # ---- Unfinished Tests ---- #
 
-    def test_pawn_promotion(self):
-        # promote to queen, rook, knight, bishop, then try moving those newly minted pieces (make sure color is correct)
-        pass
-
-    def test_illegal_king_moves_dealing_with_check(self):
-        pass
-
-    def test_illegal_moves_that_leave_the_king_in_check(self):
-        pass
-
-    def test_legal_castling_moves(self):
-        pass
-
-    def test_illegal_castling_moves(self):
-        pass
-
-    def test_first_side_to_move_is_white(self):
-        pass
-
-    def test_example_game_start_to_finish_with_invalid_moves_mixed_in(self):
-        pass
+    # def test_pawn_promotion(self):
+    #     # promote to queen, rook, knight, bishop, then try moving those newly minted pieces (make sure color is correct)
+    #     pass
+    #
+    # def test_illegal_king_moves_dealing_with_check(self):
+    #     pass
+    #
+    # def test_illegal_moves_that_leave_the_king_in_check(self):
+    #     pass
+    #
+    # def test_legal_castling_moves(self):
+    #     pass
+    #
+    # def test_illegal_castling_moves(self):
+    #     pass
+    #
+    # def test_first_side_to_move_is_white(self):
+    #     pass
+    #
+    # def test_example_game_start_to_finish_with_invalid_moves_mixed_in(self):
+    #     pass
