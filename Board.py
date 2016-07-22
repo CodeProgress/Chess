@@ -1,4 +1,5 @@
 import Pieces
+from copy import deepcopy
 
 # board
 # Interfaces:
@@ -24,7 +25,10 @@ class ChessBoard:
         self.canBlackCastleShort = True
         self.canWhiteCastleLong = True
         self.canWhiteCastleShort = True
+        self.promotePawnTo = None # q, r, n or b.  To be set in a "get_move" type method and used in Pieces.Pawn
         self.create_starting_position()
+        self.whiteKing = self.get_contents_of_square('e1')
+        self.blackKing = self.get_contents_of_square('e8')
 
     def create_starting_position(self):
         self.create_empty_board()
@@ -49,10 +53,10 @@ class ChessBoard:
                 self.black_pieces_on_the_board.append(pieceToAdd)
 
     def move_piece_from_on_the_board_to_off_the_board(self, piece):
-        #if piece.is_white_piece():
-        #    self.white_pieces_on_the_board.remove(piece)
-        #elif piece.is_black_piece():
-        #    self.black_pieces_on_the_board.remove(piece)
+        if piece.is_white_piece():
+           self.white_pieces_on_the_board.remove(piece)
+        elif piece.is_black_piece():
+           self.black_pieces_on_the_board.remove(piece)
         self.pieces_off_the_board.append(piece)
 
     def add_standard_initial_pieces_to_board(self):
@@ -136,13 +140,14 @@ class ChessBoard:
 
     def clear_square(self, square):
         if not self.is_square_empty(square):
-            self.move_piece_from_on_the_board_to_off_the_board(self.get_contents_of_square(square))
             self.assign_value_to_square(self.EMPTY_SQUARE, square)
 
     def update_en_passant_target_square(self, newEnPassantSquare):
         self.enPassantTargetSquare = newEnPassantSquare
 
     def update_square_with_piece(self, piece, square):
+        if not self.is_square_empty(square):
+            self.move_piece_from_on_the_board_to_off_the_board(self.get_contents_of_square(square))
         self.clear_square(square)
         self.assign_value_to_square(piece, square)
 
@@ -222,6 +227,17 @@ class ChessBoard:
         if self.enPassantTargetSquare != '':
             self.resetEnPassantTargetSquare = True
 
+    def is_king_in_check_after_simulating_move(self, originSquare, destinationSquare):
+        copyOfBoard = deepcopy(self)
+        copyOfBoard.make_move(originSquare, destinationSquare)
+
+        if copyOfBoard.get_contents_of_square(destinationSquare).is_white_piece():
+            kingToValidate = copyOfBoard.whiteKing
+        else:
+            kingToValidate = copyOfBoard.blackKing
+
+        return copyOfBoard.is_king_in_check(kingToValidate)
+
     def is_valid_move(self, originSquare, destinationSquare):
         # This is the super method that must incorporate all of the rules of the game
         # possible overlap between this and execute_move method.
@@ -237,24 +253,36 @@ class ChessBoard:
         if not originPiece.is_legal_move(self, destinationSquare):
             return False
 
-        # is legal move from game perspective:
-        #     is the king in check?
-        #     is the move a castle?  Will require castling validation and a different execute move that moves two pieces at once
-        #         maybe move this to the King class, handle with a move two to the right/left,
-        #         update board to handle rook move (like en passant method)
+        kingToValidate = self.whiteKing if originPiece.is_white_piece() else self.blackKing
+        if self.is_king_in_check_after_simulating_move(originSquare, destinationSquare):
+            return False
+
         return True
 
     def execute_move(self, originSquare, destinationSquare):
         if self.is_valid_move(originSquare, destinationSquare):
-            originPiece = self.get_contents_of_square(originSquare)
-            originPiece.execute_move(self, destinationSquare)
-            self.resetEnPassantTargetSquareIfNeeded()
+            self.make_move(originSquare, destinationSquare)
 
-            # Check ending conditions:
-            #     Checkmate
-            #     Stalemate
-            #     50 move rule
-            #     3 fold repetition
+        # Check ending conditions:
+        #     Checkmate
+        #     Stalemate
+        #     50 move rule
+        #     3 fold repetition
+
+    def make_move(self, originSquare, destinationSquare):
+        # blindly makes move without regard to validation
+        originPiece = self.get_contents_of_square(originSquare)
+        originPiece.execute_move(self, destinationSquare)
+        self.resetEnPassantTargetSquareIfNeeded()
+
+    def get_move(self, originSquare, destinationSquare, pawnPromotion = None):
+        raise NotImplementedError
+
+    def simulate_get_move(self, originSquare, destinationSquare, pawnPromotion = None):
+        if pawnPromotion:
+            self.promotePawnTo = pawnPromotion
+        self.execute_move(originSquare, destinationSquare)
+        self.promotePawnTo = None
 
     def is_king_in_check(self, kingPiece):
         return self.is_square_under_attack(kingPiece.current_square, kingPiece.get_color_of_opponent_side())

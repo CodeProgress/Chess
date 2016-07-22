@@ -84,15 +84,32 @@ class Tests(unittest.TestCase):
         self.assertEquals('c6', self.board.get_contents_of_square('c6').current_square,
                           "Piece's current square incorrect after moving to a new square")
 
+    def is_pawn_promotion(self, piece, destination):
+        return (
+            piece == Pieces.Pawn
+            and (
+                self.board.get_row_number_from_square(destination) == 0
+                or self.board.get_row_number_from_square(destination) == 7
+            )
+        )
+
+    def verify_piece_is_properly_moved(self, piece, destination):
+        if not self.is_pawn_promotion(piece, destination):
+            self.assertEquals(piece, type(self.board.get_contents_of_square(destination)),
+                          "Square does not contain the correct piece")
+        else:
+            # auto-promotion is to queen, other promotions tested in specific pawn promotion tests
+            self.assertEquals(Pieces.Queen, type(self.board.get_contents_of_square(destination)),
+                              "Square does not contain the correct piece")
+
     def verify_legal_move(self, piece, origin, destination):
         self.assertTrue(self.board.get_contents_of_square(origin).is_legal_move(self.board, destination))
         self.board.execute_move(origin, destination)
-        self.assertEquals(piece, type(self.board.get_contents_of_square(destination)),
-                          "Square does not contain the correct piece")
+        self.verify_piece_is_properly_moved(piece, destination)
         self.assertTrue(self.board.is_square_empty(origin))
 
     def verify_illegal_move_is_not_made(self, piece, origin, destination):
-        self.assertFalse(self.board.get_contents_of_square(origin).is_legal_move(self.board, destination))
+        self.assertFalse(self.board.is_valid_move(origin, destination))
         isDestinationSquareInitiallyEmpty = self.board.is_square_empty(destination)
         self.board.execute_move(origin, destination)
         self.assertEquals(piece, type(self.board.get_contents_of_square(origin)),
@@ -391,6 +408,7 @@ class Tests(unittest.TestCase):
         self.verify_legal_move(Pieces.Pawn, 'a4', 'a5')
         self.verify_legal_move(Pieces.Pawn, 'a5', 'a6')
         self.verify_legal_move(Pieces.Pawn, 'a6', 'b7')  # capture
+        self.verify_legal_move(Pieces.Pawn, 'b7', 'a8')
         self.verify_legal_move(Pieces.Pawn, 'b4', 'b5')
         self.verify_legal_move(Pieces.Pawn, 'a7', 'a5')  # prepare en passant square
         self.verify_legal_move(Pieces.Pawn, 'b5', 'a6')
@@ -459,22 +477,142 @@ class Tests(unittest.TestCase):
         self.board.execute_move('d2', 'd3')
         self.assertEquals('', self.board.enPassantTargetSquare)
 
-# ---- Unfinished Tests ---- #
+    def test_legal_castling_moves(self):
+        # short
+        whiteShortCastleRook = self.board.get_contents_of_square('h1')
+        self.board.execute_move('e2', 'e4')
+        self.board.execute_move('f1', 'e2')
+        self.board.execute_move('g1', 'f3')
+        self.verify_legal_move(Pieces.King, 'e1', 'g1')
+        self.assertEqual(whiteShortCastleRook, self.board.get_contents_of_square('f1'))
+        self.assertTrue(self.board.is_square_empty('h1'))
+        # long
+        blackLongCastleRook = self.board.get_contents_of_square('a8')
+        self.board.execute_move('d7', 'd6')
+        self.board.execute_move('c8', 'e6')
+        self.board.execute_move('d8', 'd7')
+        self.board.execute_move('b8', 'c6')
+        self.verify_legal_move(Pieces.King, 'e8', 'c8')
+        self.assertEqual(blackLongCastleRook, self.board.get_contents_of_square('d8'))
+        self.assertTrue(self.board.is_square_empty('a8'))
 
-    # def test_pawn_promotion(self):
-    #     # promote to queen, rook, knight, bishop, then try moving those newly minted pieces (make sure color is correct)
-    #     pass
-    #
+    def test_illegal_castling_moves(self):
+        self.board.execute_move('e2', 'e4')
+        self.board.execute_move('f1', 'a6')
+        self.verify_illegal_move_is_not_made(Pieces.King, 'e1', 'g1')
+        self.board.execute_move('g1', 'f3')
+        # now legal
+        self.board.execute_move('b7', 'b6')
+        self.board.execute_move('c8', 'a6')
+        # king would have to pass through in check
+        self.verify_illegal_move_is_not_made(Pieces.King, 'e1', 'g1')
+
+        self.board.execute_move('d2', 'd3')
+        self.board.execute_move('e7', 'e6')
+        self.board.execute_move('f8', 'b4')
+        # king in check
+        self.verify_illegal_move_is_not_made(Pieces.King, 'e1', 'g1')
+
+        self.board.execute_move('c2', 'c3')
+        self.board.execute_move('g8', 'f6')
+        self.board.execute_move('f6', 'h5')
+        self.board.execute_move('h5', 'f4')
+        self.board.execute_move('f4', 'h3')
+        # king would land in check
+        self.verify_illegal_move_is_not_made(Pieces.King, 'e1', 'g1')
+
+        self.board.execute_move('h3', 'f4')
+        self.assertTrue(self.board.get_contents_of_square('e1').is_legal_move(self.board,'g1'))  # make sure castling is still available
+        self.verify_illegal_move_is_not_made(Pieces.King, 'e1', 'e2')  # this would be into check
+        self.board.execute_move('f4', 'h5')
+        self.board.execute_move('e1', 'e2')
+        self.verify_illegal_move_is_not_made(Pieces.King, 'e2', 'g1')
+        self.board.execute_move('e2', 'e1')
+        # king already moved
+        self.verify_illegal_move_is_not_made(Pieces.King, 'e1', 'g1')
+
+        self.assertTrue(self.board.get_contents_of_square('e8').is_legal_move(self.board,'g8'))  # make sure castling is still available
+        self.board.execute_move('h8', 'g8')
+        self.board.execute_move('g8', 'h8')
+        # rook already moved
+        self.verify_illegal_move_is_not_made(Pieces.King, 'e8', 'g8')
+
+    def test_pawn_promotion(self):
+        self.board.execute_move('a2', 'a4')
+        self.board.execute_move('a4', 'a5')
+        self.board.execute_move('a5', 'a6')
+        self.board.execute_move('a6', 'b7')
+        oldPawn = self.board.get_contents_of_square('b7')
+        capturedPiece = self.board.get_contents_of_square('a8')
+        self.assertTrue(capturedPiece in self.board.black_pieces_on_the_board)
+        self.board.simulate_get_move('b7', 'a8')  # check default with no third parameter promotes to queen
+        newlyMintedPiece = self.board.get_contents_of_square('a8')
+        self.assertTrue(newlyMintedPiece.is_white_piece())
+        self.assertTrue(newlyMintedPiece in self.board.white_pieces_on_the_board)
+        self.assertFalse(oldPawn in self.board.white_pieces_on_the_board)
+        self.assertTrue(oldPawn in self.board.pieces_off_the_board)
+        self.assertFalse(capturedPiece in self.board.black_pieces_on_the_board)
+        self.assertTrue(capturedPiece in self.board.pieces_off_the_board)
+        self.verify_legal_move(Pieces.Queen, 'a8', 'f3')
+
+        self.board.execute_move('b2', 'b4')
+        self.board.execute_move('b4', 'b5')
+        self.board.execute_move('b5', 'b6')
+        self.board.execute_move('b6', 'a7')
+        oldPawn = self.board.get_contents_of_square('a7')
+        capturedPiece = self.board.get_contents_of_square('b8')
+        self.assertTrue(capturedPiece in self.board.black_pieces_on_the_board)
+        self.board.simulate_get_move('a7', 'b8', 'r')
+        newlyMintedPiece = self.board.get_contents_of_square('b8')
+        self.assertTrue(newlyMintedPiece.is_white_piece())
+        self.assertTrue(newlyMintedPiece in self.board.white_pieces_on_the_board)
+        self.assertFalse(oldPawn in self.board.white_pieces_on_the_board)
+        self.assertTrue(oldPawn in self.board.pieces_off_the_board)
+        self.assertFalse(capturedPiece in self.board.black_pieces_on_the_board)
+        self.assertTrue(capturedPiece in self.board.pieces_off_the_board)
+        self.verify_legal_move(Pieces.Rook, 'b8', 'b3')
+
+        self.board.execute_move('h7', 'h5')
+        self.board.execute_move('h5', 'h4')
+        self.board.execute_move('h4', 'h3')
+        self.board.execute_move('h3', 'g2')
+        oldPawn = self.board.get_contents_of_square('g2')
+        capturedPiece = self.board.get_contents_of_square('h1')
+        self.assertTrue(capturedPiece in self.board.white_pieces_on_the_board)
+        self.board.simulate_get_move('g2', 'h1', 'n')
+        newlyMintedPiece = self.board.get_contents_of_square('h1')
+        self.assertTrue(newlyMintedPiece.is_black_piece())
+        self.assertTrue(newlyMintedPiece in self.board.black_pieces_on_the_board)
+        self.assertFalse(oldPawn in self.board.black_pieces_on_the_board)
+        self.assertTrue(oldPawn in self.board.pieces_off_the_board)
+        self.assertFalse(capturedPiece in self.board.white_pieces_on_the_board)
+        self.assertTrue(capturedPiece in self.board.pieces_off_the_board)
+        self.verify_legal_move(Pieces.Knight, 'h1', 'f2')
+
+        self.board.execute_move('g7', 'g5')
+        self.board.execute_move('g5', 'g4')
+        self.board.execute_move('g4', 'g3')
+        self.board.execute_move('g3', 'h2')
+        oldPawn = self.board.get_contents_of_square('h2')
+        capturedPiece = self.board.get_contents_of_square('g1')
+        self.assertTrue(capturedPiece in self.board.white_pieces_on_the_board)
+        self.board.simulate_get_move('h2', 'g1', 'b')
+        newlyMintedPiece = self.board.get_contents_of_square('g1')
+        self.assertTrue(newlyMintedPiece.is_black_piece())
+        self.assertTrue(newlyMintedPiece in self.board.black_pieces_on_the_board)
+        self.assertFalse(oldPawn in self.board.black_pieces_on_the_board)
+        self.assertTrue(oldPawn in self.board.pieces_off_the_board)
+        self.assertFalse(capturedPiece in self.board.white_pieces_on_the_board)
+        self.assertTrue(capturedPiece in self.board.pieces_off_the_board)
+        self.verify_legal_move(Pieces.Bishop, 'g1', 'h2')
+        self.verify_legal_move(Pieces.Bishop, 'h2', 'd6')
+
+    # ---- Unfinished Tests ---- #
+
     # def test_illegal_king_moves_dealing_with_check(self):
     #     pass
     #
     # def test_illegal_moves_that_leave_the_king_in_check(self):
-    #     pass
-    #
-    # def test_legal_castling_moves(self):
-    #     pass
-    #
-    # def test_illegal_castling_moves(self):
     #     pass
     #
     # def test_first_side_to_move_is_white(self):

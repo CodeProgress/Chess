@@ -4,12 +4,13 @@
 class Piece(object):
     WHITE = 'w'
     BLACK = 'b'
-    WHITE_PAWN_STARTING_ROW = 1
-    BLACK_PAWN_STARTING_ROW = 6
     def __init__(self, color, currentSquare = None):
         self.color = color
         assert self.is_white_piece() or self.is_black_piece()
         self.current_square = currentSquare
+
+    # def __eq__(self, other):
+    #     return type(self) == other
 
     # abstract methods
     def all_possible_moves(self, board):
@@ -24,9 +25,10 @@ class Piece(object):
     def execute_move(self, board, destination_square):
         self.special_move_maintenance_before_executing_move(board, destination_square)
         originSquare = self.current_square
+        pieceToMove = board.get_contents_of_square(originSquare)
+        board.update_square_with_piece(pieceToMove, destination_square)
+        pieceToMove.current_square = destination_square
         board.clear_square(originSquare)
-        board.update_square_with_piece(self, destination_square)
-        self.current_square = destination_square
 
     def special_move_maintenance_before_executing_move(self, board, destination_square):
         pass
@@ -85,6 +87,8 @@ class Pawn(Piece):
     # if an opponent's piece is diagonal, the pawn may move one square diagonally and replace the piece on that square.
     # if moving to last row, promote piece to Queen, Rook, Knight or Bishop.  All are valid moves, player should be prompted to choose.
     # any pawn move should reset the 50 move game counter.  (This might be better handled in the Rules class or FEN)
+    WHITE_PAWN_STARTING_ROW = 1
+    BLACK_PAWN_STARTING_ROW = 6
 
     def special_move_maintenance_before_executing_move(self, board, destination_square):
         if destination_square == board.enPassantTargetSquare:
@@ -97,11 +101,23 @@ class Pawn(Piece):
             board.update_en_passant_target_square(self.get_square_one_forward(board))
             board.resetEnPassantTargetSquare = False  # to account for back to back en passant making moves
 
-        elif abs(board.get_row_number_from_square(destination_square) - self.get_starting_row()) == 6:
-            raise NotImplementedError
-            # prompt for which piece to change to
-            # change the pawn to q, r, n, or b? or create a new one and update the board current square to contain that piece
-        pass
+        elif self.is_pawn_on_final_row(board, destination_square):
+            newPieceColor = self.color
+            newPieceSquare = self.current_square
+            promoteTo = board.promotePawnTo
+            if promoteTo == 'r':
+                newPiece = Rook
+            elif promoteTo == 'n':
+                newPiece = Knight
+            elif promoteTo == 'b':
+                newPiece = Bishop
+            else:   # default to 'q' (queen) if no selection or if invalid
+                newPiece = Queen
+
+            board.add_piece_to_board(newPiece, newPieceColor, [newPieceSquare])
+
+    def is_pawn_on_final_row(self, board, square):
+        return abs(board.get_row_number_from_square(square) - self.get_starting_row()) == 6
 
     def get_starting_row(self):
         if self.is_white_piece():
@@ -306,9 +322,12 @@ class King(Piece):
     def special_move_maintenance_before_executing_move(self, board, destination_square):
         if self.isFirstMove:
             if self.is_legal_castling_move(board, destination_square):
-                pass
-                # move rook to the square the king jumped over.
-                # Change the "can castle" flags to false
+                newRookSquare = self.get_square_king_passes_over_when_castling(destination_square)
+                oldRookSquare = self.get_old_rook_square(destination_square)
+                rookPiece = board.get_contents_of_square(oldRookSquare)
+                board.clear_square(oldRookSquare)
+                board.update_square_with_piece(rookPiece, newRookSquare)
+                rookPiece.current_square = destination_square
 
             self.isFirstMove = False
             if self.is_white_piece():
@@ -317,7 +336,6 @@ class King(Piece):
             else:
                 board.canBlackCastleShort = False
                 board.canBlackCastleLong = False
-        #raise NotImplementedError
 
     def is_castling_short_still_available(self, board, destination_square):
         if self.is_white_piece() and self.current_square == 'e1' and destination_square == 'g1':
@@ -347,6 +365,17 @@ class King(Piece):
             return 'f8'
         elif destination_square == 'c8':
             return 'd8'
+
+    def get_old_rook_square(self, destination_square):
+        assert destination_square in ('g1', 'c1', 'g8', 'c8')
+        if destination_square == 'g1':
+            return 'h1'
+        elif destination_square == 'c1':
+            return 'a1'
+        elif destination_square == 'g8':
+            return 'h8'
+        elif destination_square == 'c8':
+            return 'a8'
 
     def is_legal_castling_move(self, board, destination_square):
         if not self.isFirstMove:
