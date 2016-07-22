@@ -15,10 +15,16 @@ class ChessBoard:
     ALL_ROWS = '12345678'
     EMPTY_SQUARE = '~'
     def __init__(self):
-        self.create_starting_position()
         self.pieces_off_the_board = []
+        self.white_pieces_on_the_board = []
+        self.black_pieces_on_the_board = []
         self.enPassantTargetSquare = ''
         self.resetEnPassantTargetSquare = False
+        self.canBlackCastleLong = True
+        self.canBlackCastleShort = True
+        self.canWhiteCastleLong = True
+        self.canWhiteCastleShort = True
+        self.create_starting_position()
 
     def create_starting_position(self):
         self.create_empty_board()
@@ -35,7 +41,19 @@ class ChessBoard:
     def add_piece_to_board(self, piece, color, squares):
         for sq in squares:
             assert self.is_square_on_board(sq)
-            self.update_square_with_piece(piece(color, sq), sq)
+            pieceToAdd = piece(color, sq)
+            self.update_square_with_piece(pieceToAdd, sq)
+            if pieceToAdd.is_white_piece():
+                self.white_pieces_on_the_board.append(pieceToAdd)
+            elif pieceToAdd.is_black_piece():
+                self.black_pieces_on_the_board.append(pieceToAdd)
+
+    def move_piece_from_on_the_board_to_off_the_board(self, piece):
+        #if piece.is_white_piece():
+        #    self.white_pieces_on_the_board.remove(piece)
+        #elif piece.is_black_piece():
+        #    self.black_pieces_on_the_board.remove(piece)
+        self.pieces_off_the_board.append(piece)
 
     def add_standard_initial_pieces_to_board(self):
         # add pawns
@@ -118,13 +136,14 @@ class ChessBoard:
 
     def clear_square(self, square):
         if not self.is_square_empty(square):
-            self.pieces_off_the_board.append(self.get_contents_of_square(square))
+            self.move_piece_from_on_the_board_to_off_the_board(self.get_contents_of_square(square))
             self.assign_value_to_square(self.EMPTY_SQUARE, square)
 
     def update_en_passant_target_square(self, newEnPassantSquare):
         self.enPassantTargetSquare = newEnPassantSquare
 
     def update_square_with_piece(self, piece, square):
+        self.clear_square(square)
         self.assign_value_to_square(piece, square)
 
     def get_contents_of_square(self, square):
@@ -236,6 +255,19 @@ class ChessBoard:
             #     Stalemate
             #     50 move rule
             #     3 fold repetition
+
+    def is_king_in_check(self, kingPiece):
+        return self.is_square_under_attack(kingPiece.current_square, kingPiece.get_color_of_opponent_side())
+
+    def is_square_under_attack(self, square, colorOfAttackingSide):
+        if colorOfAttackingSide == Pieces.Piece.WHITE:
+            pieceList = self.white_pieces_on_the_board
+        else:
+            pieceList = self.black_pieces_on_the_board
+        for piece in pieceList:
+            if piece.is_legal_move(self, square):
+                return True
+        return False
 
     def __str__(self):
         boardAsStr = ''
