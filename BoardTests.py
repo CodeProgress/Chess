@@ -607,16 +607,40 @@ class Tests(unittest.TestCase):
         self.verify_legal_move(Pieces.Bishop, 'g1', 'h2')
         self.verify_legal_move(Pieces.Bishop, 'h2', 'd6')
 
-    # ---- Unfinished Tests ---- #
+    def test_illegal_king_moves_dealing_with_check(self):
+        self.board.execute_move('e2', 'e4')
+        self.board.execute_move('b7', 'b6')
+        self.board.execute_move('c8', 'a6')
+        self.verify_illegal_move_is_not_made(Pieces.King, 'e1', 'e2')
+        self.board.execute_move('d2', 'd3')
+        self.verify_legal_move(Pieces.King, 'e1', 'e2')
+        self.board.execute_move('f2', 'f3')
+        self.board.execute_move('g8', 'f6')
+        self.board.execute_move('f2', 'f3')
+        self.board.execute_move('f6', 'g4')
+        self.verify_illegal_move_is_not_made(Pieces.King, 'e2', 'f2')
+        self.board.execute_move('f3', 'g4')
+        self.verify_legal_move(Pieces.King, 'e2', 'f3')
 
-    # def test_illegal_king_moves_dealing_with_check(self):
-    #     pass
-    #
-    # def test_illegal_moves_that_leave_the_king_in_check(self):
-    #     pass
-    #
+    def test_illegal_moves_that_leave_the_king_in_check(self):
+        self.board.execute_move('e2', 'e4')
+        self.board.execute_move('b7', 'b6')
+        self.board.execute_move('c8', 'a6')
+        self.board.execute_move('d2', 'd3')
+        self.verify_legal_move(Pieces.King, 'e1', 'e2')
+        self.verify_illegal_move_is_not_made(Pieces.Pawn, 'd3', 'd4')
+
+        self.board.execute_move('d7', 'd6')
+        self.board.execute_move('d8', 'd7')
+        self.board.execute_move('d7', 'e6')
+        self.board.execute_move('e4', 'e5')
+        self.verify_illegal_move_is_not_made(Pieces.Pawn, 'e5', 'd6')
+
+# ---- Unfinished Tests ---- #
+
     # def test_first_side_to_move_is_white(self):
     #     pass
     #
     # def test_example_game_start_to_finish_with_invalid_moves_mixed_in(self):
+    #     # using the Game class
     #     pass

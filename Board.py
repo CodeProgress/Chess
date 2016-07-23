@@ -16,6 +16,7 @@ class ChessBoard:
     ALL_ROWS = '12345678'
     EMPTY_SQUARE = '~'
     def __init__(self):
+        self.is_game_over = False
         self.pieces_off_the_board = []
         self.white_pieces_on_the_board = []
         self.black_pieces_on_the_board = []
@@ -253,7 +254,6 @@ class ChessBoard:
         if not originPiece.is_legal_move(self, destinationSquare):
             return False
 
-        kingToValidate = self.whiteKing if originPiece.is_white_piece() else self.blackKing
         if self.is_king_in_check_after_simulating_move(originSquare, destinationSquare):
             return False
 
@@ -263,26 +263,48 @@ class ChessBoard:
         if self.is_valid_move(originSquare, destinationSquare):
             self.make_move(originSquare, destinationSquare)
 
-        # Check ending conditions:
-        #     Checkmate
-        #     Stalemate
-        #     50 move rule
-        #     3 fold repetition
-
     def make_move(self, originSquare, destinationSquare):
         # blindly makes move without regard to validation
         originPiece = self.get_contents_of_square(originSquare)
         originPiece.execute_move(self, destinationSquare)
         self.resetEnPassantTargetSquareIfNeeded()
 
-    def get_move(self, originSquare, destinationSquare, pawnPromotion = None):
-        raise NotImplementedError
+    def attempt_to_make_move(self, move):
+        # move is of the form e2e4 or e7e8q
+        if move == 'resign':
+            self.is_game_over = True
+
+        if type(move) != str:
+            return False
+
+        if len(move) < 4 or len(move) > 5:
+            return False
+
+        originSquare = move[:2]
+        destinationSquare = move[2:4]
+        if len(move) == 5:
+            self.promotePawnTo = move[-1]
+
+        if not self.is_valid_square(originSquare) or not self.is_valid_square(destinationSquare):
+            return False
+
+        self.execute_move(originSquare, destinationSquare)
+        self.promotePawnTo = None
+        return True
 
     def simulate_get_move(self, originSquare, destinationSquare, pawnPromotion = None):
         if pawnPromotion:
             self.promotePawnTo = pawnPromotion
         self.execute_move(originSquare, destinationSquare)
         self.promotePawnTo = None
+
+    def is_ending_condition(self):
+        #     Checkmate
+        #     Stalemate
+        #     50 move rule
+        #     3 fold repetition
+        #     is resignation
+        return self.is_game_over
 
     def is_king_in_check(self, kingPiece):
         return self.is_square_under_attack(kingPiece.current_square, kingPiece.get_color_of_opponent_side())

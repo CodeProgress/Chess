@@ -1,35 +1,24 @@
-# Game
-# Interfaces:
-#   play_game
+import Board
+
 
 class Game:
     def __init__(self):
+        self.board = Board.ChessBoard()
         pass
 
     def play_game(self):
         while not self.is_game_over():
             self.play_move()
+            print self.board
         print "Game Over!"
 
     def is_game_over(self):
-        # TO FINISH
-        return True
+        return self.board.is_ending_condition()
 
     def play_move(self):
-        move = self.get_move()
-        if self.is_valid_move(move):
-            self.update_position(move)
-        else:
-            print "Invalid Move.  Please try again"
+        move = raw_input("Enter move: (example: e2e4): ")
+        self.board.attempt_to_make_move(move)
 
-    def get_move(self):
-        move = raw_input("Enter move: (example: e2e4) ")
-        return move
+g = Game()
 
-    def is_valid_move(self, move):
-        # TO FINISH
-        return True
-
-    def update_position(self, move):
-        # TO FINISH
-        pass
+g.play_game()
