@@ -1,12 +1,6 @@
 import Pieces
 from copy import deepcopy
 
-# board
-# Interfaces:
-#   update_board_position(legalMove) # legalMove of the form e2e4
-#   get_fen()
-#
-# Helpers
 # Notes:
 #     squares are referred to by algebraic notation
 
@@ -17,6 +11,10 @@ class ChessBoard:
     EMPTY_SQUARE = '~'
     def __init__(self):
         self.is_game_over = False
+        self.most_resent_player_has_resigned = False
+        self.past_game_states = {}
+        self.fifty_move_counter = 0
+        self.outcome = None
         self.pieces_off_the_board = []
         self.white_pieces_on_the_board = []
         self.black_pieces_on_the_board = []
@@ -259,9 +257,28 @@ class ChessBoard:
 
         return True
 
+    def update_past_game_states(self):
+        gameState = str(self)
+        if gameState in self.past_game_states:
+            self.past_game_states[gameState] += 1
+        else:
+            self.past_game_states[gameState] = 1
+
+    def is_non_reversible_move(self, originSquare, destinationSquare):
+        # pawn move
+        if type(self.get_contents_of_square(originSquare)) == Pieces.Pawn:
+            return True
+        # or capture
+        return not self.is_square_empty(destinationSquare)
+
     def execute_move(self, originSquare, destinationSquare):
         if self.is_valid_move(originSquare, destinationSquare):
             self.make_move(originSquare, destinationSquare)
+            self.update_past_game_states()
+            if self.is_non_reversible_move(originSquare, destinationSquare):
+                self.fifty_move_counter = 0
+            else:
+                self.fifty_move_counter += .5  # half move
 
     def make_move(self, originSquare, destinationSquare):
         # blindly makes move without regard to validation
@@ -272,7 +289,8 @@ class ChessBoard:
     def attempt_to_make_move(self, move):
         # move is of the form e2e4 or e7e8q
         if move == 'resign':
-            self.is_game_over = True
+            self.most_resent_player_has_resigned = True
+            return True
 
         if type(move) != str:
             return False
@@ -298,12 +316,40 @@ class ChessBoard:
         self.execute_move(originSquare, destinationSquare)
         self.promotePawnTo = None
 
+    def is_checkmate(self):
+        # king is in check
+        # no move will get king out of check
+        pass
+
+    def is_stalemate(self):
+        # king is not in check
+        # every move puts the king in check
+        pass
+
+    def is_fifty_moves_without_pawn_move_or_capture(self):
+        if self.fifty_move_counter == 50:
+            self.outcome = "Draw"
+            return True
+        return False
+
+    def is_three_fold_repetition(self):
+        if self.past_game_states[str(self)] == 3:
+            self.outcome = "Draw"
+            return True
+        return False
+
+    def is_resignation(self):
+        return self.most_resent_player_has_resigned
+
     def is_ending_condition(self):
         #     Checkmate
         #     Stalemate
-        #     50 move rule
-        #     3 fold repetition
-        #     is resignation
+        if self.is_fifty_moves_without_pawn_move_or_capture():
+            return True
+        if self.is_three_fold_repetition():
+            return True
+        if self.is_resignation():
+            return True
         return self.is_game_over
 
     def is_king_in_check(self, kingPiece):

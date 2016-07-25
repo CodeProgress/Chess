@@ -6,11 +6,12 @@ class Game:
         self.board = Board.ChessBoard()
         pass
 
-    def play_game(self):
+    def play_game(self, verbose=False):
         while not self.is_game_over():
             self.play_move()
-            print self.board
-        print "Game Over!"
+            if verbose:
+                print self.board
+        print "Game Over! {}".format(self.board.outcome)
 
     def is_game_over(self):
         return self.board.is_ending_condition()
