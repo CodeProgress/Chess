@@ -518,11 +518,14 @@ class Tests(unittest.TestCase):
         self.board.execute_move('f6', 'h5')
         self.board.execute_move('h5', 'f4')
         self.board.execute_move('f4', 'h3')
+        self.board.execute_move('a2', 'a3')
         # king would land in check
         self.verify_illegal_move_is_not_made(Pieces.King, 'e1', 'g1')
 
+        self.board.execute_move('a3', 'a4')
         self.board.execute_move('h3', 'f4')
-        self.assertTrue(self.board.get_contents_of_square('e1').is_legal_move(self.board,'g1'))  # make sure castling is still available
+        self.assertTrue(self.board.get_contents_of_square('e1').is_legal_move(self.board, 'g1'))  # make sure castling is still available
+        self.board.execute_move('c3', 'c4')
         self.verify_illegal_move_is_not_made(Pieces.King, 'e1', 'e2')  # this would be into check
         self.board.execute_move('f4', 'h5')
         self.board.execute_move('e1', 'e2')
@@ -611,6 +614,7 @@ class Tests(unittest.TestCase):
         self.board.execute_move('e2', 'e4')
         self.board.execute_move('b7', 'b6')
         self.board.execute_move('c8', 'a6')
+        self.board.execute_move('a2', 'a3')
         self.verify_illegal_move_is_not_made(Pieces.King, 'e1', 'e2')
         self.board.execute_move('d2', 'd3')
         self.verify_legal_move(Pieces.King, 'e1', 'e2')
@@ -618,6 +622,7 @@ class Tests(unittest.TestCase):
         self.board.execute_move('g8', 'f6')
         self.board.execute_move('f2', 'f3')
         self.board.execute_move('f6', 'g4')
+        self.board.execute_move('a3', 'a4')
         self.verify_illegal_move_is_not_made(Pieces.King, 'e2', 'f2')
         self.board.execute_move('f3', 'g4')
         self.verify_legal_move(Pieces.King, 'e2', 'f3')
@@ -628,6 +633,7 @@ class Tests(unittest.TestCase):
         self.board.execute_move('c8', 'a6')
         self.board.execute_move('d2', 'd3')
         self.verify_legal_move(Pieces.King, 'e1', 'e2')
+        self.board.execute_move('a2', 'a3')
         self.verify_illegal_move_is_not_made(Pieces.Pawn, 'd3', 'd4')
 
         self.board.execute_move('d7', 'd6')
@@ -636,11 +642,44 @@ class Tests(unittest.TestCase):
         self.board.execute_move('e4', 'e5')
         self.verify_illegal_move_is_not_made(Pieces.Pawn, 'e5', 'd6')
 
+    def test_smother_mate(self):
+        self.board.execute_move('h2', 'h4')
+        self.board.execute_move('a7', 'a6')
+        self.board.execute_move('h1', 'h3')
+        self.board.execute_move('a6', 'a5')
+        self.board.execute_move('h3', 'e3')
+        self.board.execute_move('a5', 'a4')
+        self.board.execute_move('g1', 'f3')
+        self.board.execute_move('c7', 'c6')
+        self.board.execute_move('f3', 'd4')
+        self.board.execute_move('a4', 'a3')
+        self.board.execute_move('d4', 'f5')
+        self.board.execute_move('a3', 'b2')
+        self.board.execute_move('f5', 'd6')
+        self.assertTrue(self.board.is_game_over)
+
+    def test_two_move_mate(self):
+        self.board.execute_move('f2', 'f3')
+        self.board.execute_move('e7', 'e5')
+        self.board.execute_move('g2', 'g4')
+        self.board.execute_move('d8', 'h4')
+        self.assertTrue(self.board.is_game_over)
+
+    def test_four_move_mate(self):
+        self.board.execute_move('e2', 'e4')
+        self.board.execute_move('e7', 'e5')
+        self.board.execute_move('f1', 'c4')
+        self.board.execute_move('a7', 'a6')
+        self.board.execute_move('d1', 'f3')
+        self.board.execute_move('a6', 'a5')
+        self.board.execute_move('f3', 'f7')
+        self.assertTrue(self.board.is_game_over)
+
+    def test_first_side_to_move_is_white(self):
+        self.assertTrue(self.board.is_whites_turn())
+
 # ---- Unfinished Tests ---- #
 
-    # def test_first_side_to_move_is_white(self):
-    #     pass
-    #
     # def test_example_game_start_to_finish_with_invalid_moves_mixed_in(self):
     #     # using the Game class
     #     pass

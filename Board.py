@@ -15,6 +15,8 @@ class ChessBoard:
         self.past_game_states = {}
         self.fifty_move_counter = 0
         self.outcome = None
+        self.squaresAttackingWhiteKing = []  # check, double check
+        self.squaresAttackingBlackKing = []
         self.pieces_off_the_board = []
         self.white_pieces_on_the_board = []
         self.black_pieces_on_the_board = []
@@ -28,6 +30,7 @@ class ChessBoard:
         self.create_starting_position()
         self.whiteKing = self.get_contents_of_square('e1')
         self.blackKing = self.get_contents_of_square('e8')
+        self.sideToMove = 0   # 0 = white, 1 = black
 
     def create_starting_position(self):
         self.create_empty_board()
@@ -226,16 +229,16 @@ class ChessBoard:
         if self.enPassantTargetSquare != '':
             self.resetEnPassantTargetSquare = True
 
-    def is_king_in_check_after_simulating_move(self, originSquare, destinationSquare):
+    def is_king_in_check_after_simulating_move(self, originSquare, destinationSquare, kingToValidate):
         copyOfBoard = deepcopy(self)
         copyOfBoard.make_move(originSquare, destinationSquare)
 
-        if copyOfBoard.get_contents_of_square(destinationSquare).is_white_piece():
-            kingToValidate = copyOfBoard.whiteKing
+        if kingToValidate.current_square != originSquare:
+            squareOfKingAfterMove = kingToValidate.current_square
         else:
-            kingToValidate = copyOfBoard.blackKing
+            squareOfKingAfterMove = destinationSquare
 
-        return copyOfBoard.is_king_in_check(kingToValidate)
+        return copyOfBoard.is_square_under_attack(squareOfKingAfterMove, kingToValidate.get_color_of_opponent_side())
 
     def is_valid_move(self, originSquare, destinationSquare):
         # This is the super method that must incorporate all of the rules of the game
@@ -252,10 +255,12 @@ class ChessBoard:
         if not originPiece.is_legal_move(self, destinationSquare):
             return False
 
-        if self.is_king_in_check_after_simulating_move(originSquare, destinationSquare):
-            return False
+        return not self.is_king_in_check_after_simulating_move(originSquare, destinationSquare, self.get_king_of_side_that_is_moving())
 
-        return True
+    def get_king_of_side_that_is_moving(self):
+        if self.is_whites_turn():
+            return self.whiteKing
+        return self.blackKing
 
     def update_past_game_states(self):
         gameState = str(self)
@@ -271,14 +276,89 @@ class ChessBoard:
         # or capture
         return not self.is_square_empty(destinationSquare)
 
+    def get_path_traversal_incrementer(self, startSq, middleSq):
+        startRow, startCol = self.get_row_and_col_coordinates_from_square(startSq)
+        middleRow, middleCol = self.get_row_and_col_coordinates_from_square(middleSq)
+
+        rowInc = middleRow - startRow
+        colInc = middleCol - startCol
+
+        dividerToGetBackToOneToOneRatio = max(abs(rowInc), abs(colInc))
+        rowInc /= dividerToGetBackToOneToOneRatio
+        colInc /= dividerToGetBackToOneToOneRatio
+
+        return (rowInc, colInc)
+
+    def get_coordinates_after_applying_traversal_incrementer(self, coordinates, incrementer):
+        return (coordinates[0] + incrementer[0], coordinates[1] + incrementer[1])
+
+    def get_next_piece_along_path(self, startSq, middleSq):
+        traversalIncrementer = self.get_path_traversal_incrementer(startSq, middleSq)
+        nextPosCoordinates = self.get_coordinates_after_applying_traversal_incrementer(
+            self.get_row_and_col_coordinates_from_square(middleSq), traversalIncrementer)
+        while self.is_coordinate_on_board(nextPosCoordinates[0], nextPosCoordinates[1]):
+            if self.is_square_empty(self.get_square_from_row_and_col_coordinates(nextPosCoordinates[0], nextPosCoordinates[1])):
+                nextPosCoordinates = self.get_coordinates_after_applying_traversal_incrementer(nextPosCoordinates, traversalIncrementer)
+            else:
+                return self.get_contents_of_square(self.get_square_from_row_and_col_coordinates(nextPosCoordinates[0], nextPosCoordinates[1]))
+        return self.EMPTY_SQUARE   # this signifies that nothing is along path and the end of the board has been reached
+
+    def update_squares_attacking_king(self, lastMovedPieceOriginSquare, lastMovedPieceCurrentSquare):
+        squaresFromWhichCheckIsBeingDelivered = []
+
+        lastMovedPiece = self.get_contents_of_square(lastMovedPieceCurrentSquare)
+        if lastMovedPiece.is_white_piece():
+            opponentKing = self.blackKing
+        else:
+            opponentKing = self.whiteKing
+
+        # regular check: is the king square a valid move from the lastMovedPieceCurrentSquare?
+        if lastMovedPiece.is_legal_move(self, opponentKing.current_square):
+            squaresFromWhichCheckIsBeingDelivered.append(lastMovedPieceCurrentSquare)
+
+        # discover check?
+        if self.is_empty_diagonal_from(opponentKing.current_square, lastMovedPieceOriginSquare):
+            posPieceAlongPath = self.get_next_piece_along_path(opponentKing.current_square, lastMovedPieceOriginSquare)
+            if posPieceAlongPath != self.EMPTY_SQUARE \
+                    and posPieceAlongPath.color != opponentKing.color \
+                    and (type(posPieceAlongPath) == Pieces.Queen or type(posPieceAlongPath) == Pieces.Bishop):
+                squaresFromWhichCheckIsBeingDelivered.append(posPieceAlongPath.current_square)
+        elif self.is_empty_orthogonal_from(opponentKing.current_square, lastMovedPieceOriginSquare):
+            posPieceAlongPath = self.get_next_piece_along_path(opponentKing.current_square, lastMovedPieceOriginSquare)
+            if posPieceAlongPath != self.EMPTY_SQUARE \
+                    and posPieceAlongPath.color != opponentKing.color \
+                    and (type(posPieceAlongPath) == Pieces.Queen or type(posPieceAlongPath) == Pieces.Rook):
+                squaresFromWhichCheckIsBeingDelivered.append(posPieceAlongPath.current_square)
+
+        if self.is_whites_turn():
+            self.squaresAttackingBlackKing = squaresFromWhichCheckIsBeingDelivered
+            self.squaresAttackingWhiteKing = []  # if we made it this far, the king wasn't in check, so reset
+        else:
+            self.squaresAttackingWhiteKing = squaresFromWhichCheckIsBeingDelivered
+            self.squaresAttackingBlackKing = []
+
+    def is_king_in_check(self, king):
+        if king.is_white_piece():
+            return len(self.squaresAttackingWhiteKing) != 0
+        return len(self.squaresAttackingBlackKing) != 0
+
+    def update_side_to_move(self):
+        self.sideToMove ^= 1
+
     def execute_move(self, originSquare, destinationSquare):
         if self.is_valid_move(originSquare, destinationSquare):
             self.make_move(originSquare, destinationSquare)
+            # game state related housekeeping
             self.update_past_game_states()
+            self.update_squares_attacking_king(originSquare, destinationSquare)
             if self.is_non_reversible_move(originSquare, destinationSquare):
                 self.fifty_move_counter = 0
             else:
                 self.fifty_move_counter += .5  # half move
+            if self.is_ending_condition():
+                self.is_game_over = True
+            else:
+                self.update_side_to_move()
 
     def make_move(self, originSquare, destinationSquare):
         # blindly makes move without regard to validation
@@ -316,23 +396,73 @@ class ChessBoard:
         self.execute_move(originSquare, destinationSquare)
         self.promotePawnTo = None
 
-    def is_checkmate(self):
-        # king is in check
-        # no move will get king out of check
-        pass
+    def get_squares_along_path(self, startSq, endSq):
+        squares = []
+        incrementer = self.get_path_traversal_incrementer(startSq, endSq)
+        startingCoords = self.get_row_and_col_coordinates_from_square(startSq)
+        endingCoords = self.get_row_and_col_coordinates_from_square(endSq)
+        posCoords = self.get_coordinates_after_applying_traversal_incrementer(startingCoords, incrementer)
+        while posCoords != endingCoords:
+            assert self.is_coordinate_empty(posCoords[0], posCoords[1])
+            squares.append(self.get_square_from_row_and_col_coordinates(posCoords[0], posCoords[1]))
+            posCoords = self.get_coordinates_after_applying_traversal_incrementer(posCoords, incrementer)
+        return squares
 
-    def is_stalemate(self):
-        # king is not in check
-        # every move puts the king in check
-        pass
+    def is_checkmate(self, king):
+        if not self.is_king_in_check(king):
+            return False
+
+        if king.is_white_piece():
+            squaresAttackingKing = self.squaresAttackingWhiteKing
+        else:
+            squaresAttackingKing = self.squaresAttackingBlackKing
+
+        # King move (for single check and double check)
+        for posSqToMoveTo in king.get_possible_moves(self):
+            if not self.is_king_in_check_after_simulating_move(king.current_square, posSqToMoveTo, king):
+                return False
+
+        if len(squaresAttackingKing) == 1:
+            squareOfAttackingPiece = squaresAttackingKing[0]
+            # capture square
+            if self.is_square_under_attack_from_non_king_piece(squareOfAttackingPiece, king.get_color_of_opponent_side()):
+                return False
+
+            # block path
+            attackingPiece = self.get_contents_of_square(squareOfAttackingPiece)
+            if type(attackingPiece) == Pieces.Queen or type(attackingPiece) == Pieces.Bishop or type(attackingPiece) == Pieces.Rook:
+                squaresAlongPath = self.get_squares_along_path(king.current_square, squareOfAttackingPiece)
+                for sq in squaresAlongPath:
+                    if self.is_square_under_attack_from_non_king_piece(sq, king.color):
+                        return False
+        # if len > 1, that's double check and would have needed to be a king move which was already determined
+
+        if self.is_whites_turn():
+            self.outcome = "Checkmate!! White Wins"
+        else:
+            self.outcome = "Checkmate!! Black Wins"
+        return True
+
+    def is_stalemate(self, king):
+        if self.is_king_in_check(king):
+            return False
+
+        # no legal moves
+        if king.get_possible_moves(self):
+            return False
+
+        self.outcome = "Stalemate! Draw"
+        return False
 
     def is_fifty_moves_without_pawn_move_or_capture(self):
-        if self.fifty_move_counter == 50:
+        if abs(self.fifty_move_counter - 50) < .001:    # fifty_move_counter is double...
             self.outcome = "Draw"
             return True
         return False
 
     def is_three_fold_repetition(self):
+        if str(self) not in self.past_game_states:
+            return False
         if self.past_game_states[str(self)] == 3:
             self.outcome = "Draw"
             return True
@@ -342,26 +472,63 @@ class ChessBoard:
         return self.most_resent_player_has_resigned
 
     def is_ending_condition(self):
-        #     Checkmate
-        #     Stalemate
+        if self.is_whites_turn():
+            opponentKing = self.blackKing
+        else:
+            opponentKing = self.whiteKing
+        if self.is_checkmate(opponentKing):
+            return True
         if self.is_fifty_moves_without_pawn_move_or_capture():
             return True
         if self.is_three_fold_repetition():
             return True
         if self.is_resignation():
             return True
-        return self.is_game_over
+        if self.is_checkmate(opponentKing):
+            return True
+        if self.is_stalemate(opponentKing):
+            return True
+        return False
 
-    def is_king_in_check(self, kingPiece):
-        return self.is_square_under_attack(kingPiece.current_square, kingPiece.get_color_of_opponent_side())
+    def is_whites_turn(self):
+        return self.sideToMove == 0
 
-    def is_square_under_attack(self, square, colorOfAttackingSide):
+    def is_blacks_turn(self):
+        return self.sideToMove == 1
+
+    def is_square_under_attack(self, square, colorOfAttackingSide, includeKing=False):
         if colorOfAttackingSide == Pieces.Piece.WHITE:
             pieceList = self.white_pieces_on_the_board
+            kingToValidate = self.whiteKing
         else:
             pieceList = self.black_pieces_on_the_board
+            kingToValidate = self.blackKing
         for piece in pieceList:
-            if piece.is_legal_move(self, square):
+            if includeKing:
+                if type(piece) == Pieces.King:
+                    continue
+            if type(piece) == Pieces.Pawn:
+                if piece.is_valid_square_to_attack(self, square) and self.is_king_in_check_after_simulating_move(piece.current_square, square, kingToValidate):
+                    return True
+            else:
+                if piece.is_legal_move(self, square):
+                    return True
+        return False
+
+    def is_square_under_attack_from_non_king_piece(self, square, colorOfAttackingSide):
+        return self.is_square_under_attack(square, colorOfAttackingSide, True)
+
+    def can_move_to_square_with_non_king_piece(self, square, colorToMove):
+        if colorToMove == Pieces.Piece.WHITE:
+            pieceList = self.white_pieces_on_the_board
+            kingToValidate = self.whiteKing
+        else:
+            pieceList = self.black_pieces_on_the_board
+            kingToValidate = self.blackKing
+        for piece in pieceList:
+            if type(piece) == Pieces.King:
+                continue
+            if piece.is_legal_move(self, square) and not self.is_king_in_check_after_simulating_move(piece.current_square, square, kingToValidate):
                 return True
         return False
 
