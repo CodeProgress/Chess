@@ -319,6 +319,7 @@ class King(Piece):
     #      The rook it is moving toward has not already moved.
     #      There are no other pieces between the king and the rook (before castling is done)
     isFirstMove = True
+    transformations = [(1, 1), (1, 0), (1, -1), (0, 1), (0, -1), (-1, 1), (-1, 0), (-1, -1)]
     def special_move_maintenance_before_executing_move(self, board, destination_square):
         if self.isFirstMove:
             if self.is_legal_castling_move(board, destination_square):
@@ -404,6 +405,19 @@ class King(Piece):
 
         # check for castle
         return self.is_legal_castling_move(board, destination_square)
+
+    def get_possible_moves(self, board):
+        possibleSquares = []
+        currentCoordinates = board.get_row_and_col_coordinates_from_square(self.current_square)
+        for trans in self.transformations:
+            newCoordRow, newCoordCol = board.get_coordinates_after_applying_traversal_incrementer(currentCoordinates, trans)
+            if not board.is_coordinate_on_board(newCoordRow, newCoordCol):
+                continue
+            posSquare = board.get_square_from_row_and_col_coordinates(newCoordRow, newCoordCol)
+            if self.is_legal_move(board, posSquare):
+                possibleSquares.append(posSquare)
+        return possibleSquares
+
 
     def __str__(self):
         if self.color == 'w':

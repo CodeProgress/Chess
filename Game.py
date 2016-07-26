@@ -14,7 +14,7 @@ class Game:
         print "Game Over! {}".format(self.board.outcome)
 
     def is_game_over(self):
-        return self.board.is_ending_condition()
+        return self.board.is_game_over
 
     def play_move(self):
         move = raw_input("Enter move: (example: e2e4): ")
@@ -22,4 +22,4 @@ class Game:
 
 g = Game()
 
-g.play_game()
+g.play_game(True)
