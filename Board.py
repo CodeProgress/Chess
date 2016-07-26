@@ -418,7 +418,7 @@ class ChessBoard:
             squaresAttackingKing = self.squaresAttackingBlackKing
 
         # King move (for single check and double check)
-        for posSqToMoveTo in king.get_possible_moves(self):
+        for posSqToMoveTo in king.all_legal_squares_to_move_to(self):
             if not self.is_king_in_check_after_simulating_move(king.current_square, posSqToMoveTo, king):
                 return False
 
@@ -447,12 +447,18 @@ class ChessBoard:
         if self.is_king_in_check(king):
             return False
 
+        if king.is_white_piece():
+            pieceList = self.white_pieces_on_the_board
+        else:
+            pieceList = self.black_pieces_on_the_board
+
         # no legal moves
-        if king.get_possible_moves(self):
-            return False
+        for piece in pieceList:
+            if piece.all_legal_squares_to_move_to(self):
+                return False
 
         self.outcome = "Stalemate! Draw"
-        return False
+        return True
 
     def is_fifty_moves_without_pawn_move_or_capture(self):
         if abs(self.fifty_move_counter - 50) < .001:    # fifty_move_counter is double...
@@ -469,7 +475,13 @@ class ChessBoard:
         return False
 
     def is_resignation(self):
-        return self.most_resent_player_has_resigned
+        if self.most_resent_player_has_resigned:
+            if self.is_whites_turn():
+                self.outcome = "Black Wins! (white resigned)"
+            else:
+                self.outcome = "White Wins! (black resigned)"
+            return True
+        return False
 
     def is_ending_condition(self):
         if self.is_whites_turn():
@@ -484,8 +496,6 @@ class ChessBoard:
             return True
         if self.is_resignation():
             return True
-        if self.is_checkmate(opponentKing):
-            return True
         if self.is_stalemate(opponentKing):
             return True
         return False
@@ -499,15 +509,13 @@ class ChessBoard:
     def is_square_under_attack(self, square, colorOfAttackingSide, includeKing=True):
         if colorOfAttackingSide == Pieces.Piece.WHITE:
             pieceList = self.white_pieces_on_the_board
-            kingToValidate = self.whiteKing
         else:
             pieceList = self.black_pieces_on_the_board
-            kingToValidate = self.blackKing
         for piece in pieceList:
             if not includeKing and type(piece) == Pieces.King:
                 continue
             if type(piece) == Pieces.Pawn:
-                if piece.is_valid_square_to_attack(self, square) and self.is_king_in_check_after_simulating_move(piece.current_square, square, kingToValidate):
+                if piece.is_valid_square_to_attack(self, square):
                     return True
             else:
                 if piece.is_legal_move(self, square):

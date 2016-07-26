@@ -13,11 +13,37 @@ class Piece(object):
     #     return type(self) == other
 
     # abstract methods
-    def all_possible_moves(self, board):
+    def get_possible_squares_to_move_to(self, board):
         raise NotImplementedError
 
-    def all_legal_moves(self, board):
-        raise NotImplementedError
+    def all_legal_squares_to_move_to(self, board):
+        possibleSquares = self.get_possible_squares_to_move_to(board)
+        legalSquares = []
+        if self.is_white_piece():
+            kingToVerify = board.whiteKing
+        else:
+            kingToVerify = board.blackKing
+        for sq in possibleSquares:
+            if not board.is_square_on_board(sq):
+                continue
+            if self.is_legal_move(board, sq) \
+                and not board.is_king_in_check_after_simulating_move(
+                    self.current_square, sq, kingToVerify):
+                legalSquares.append(sq)
+        return legalSquares
+
+    # def get_possible_moves(self, board):
+    #     possibleSquares = []
+    #     currentCoordinates = board.get_row_and_col_coordinates_from_square(self.current_square)
+    #     for trans in self.transformations:
+    #         newCoordRow, newCoordCol = board.get_coordinates_after_applying_traversal_incrementer(currentCoordinates,
+    #                                                                                               trans)
+    #         if not board.is_coordinate_on_board(newCoordRow, newCoordCol):
+    #             continue
+    #         posSquare = board.get_square_from_row_and_col_coordinates(newCoordRow, newCoordCol)
+    #         if self.is_legal_move(board, posSquare):
+    #             possibleSquares.append(posSquare)
+    #     return possibleSquares
 
     def is_legal_move(self, board, destination_square):
         raise NotImplementedError
@@ -65,6 +91,36 @@ class Piece(object):
 
         return True
 
+    def get_possible_squares_from_transformations(self, board, transformations):
+        # used with Knight, Pawn and King
+        possibleSquares = []
+        posSq = self.current_square
+        for trans in transformations:
+            posRow, posCol = board.get_row_and_col_coordinates_from_square(posSq)
+            posRow, posCol = board.get_coordinates_after_applying_traversal_incrementer((posRow, posCol), trans)
+            if board.is_coordinate_on_board(posRow, posCol):
+                possibleSquares.append(board.get_square_from_row_and_col_coordinates(posRow, posCol))
+        return possibleSquares
+
+    def get_possible_moves_using_incrementer(self, board, incrementersList):
+        # used with Bishop, Rook and Queen
+        possibleSquares = []
+        for incrementer in incrementersList:
+            posSq = self.current_square
+            posRow, posCol = board.get_row_and_col_coordinates_from_square(posSq)
+            posRow, posCol = board.get_coordinates_after_applying_traversal_incrementer((posRow, posCol), incrementer)
+            while self.continue_traversing_transformation(board, posRow, posCol):
+                possibleSquares.append(board.get_square_from_row_and_col_coordinates(posRow, posCol))
+                posRow, posCol = board.get_coordinates_after_applying_traversal_incrementer((posRow, posCol), incrementer)
+
+        return possibleSquares
+
+    def continue_traversing_transformation(self, board, posRow, posCol):
+        return board.is_coordinate_on_board(posRow, posCol) \
+               and (board.is_coordinate_empty(posRow, posCol)
+                    or self.is_square_occupied_by_opponent_piece(
+                        board, board.get_square_from_row_and_col_coordinates(posRow, posCol)))
+
     def is_legal_game_state(self, board):
         # To final check for all legal piece moves is whether or not the king of the same color is now in check
         # if a move leaves that color's king in check, it is illegal
@@ -89,13 +145,15 @@ class Pawn(Piece):
     # any pawn move should reset the 50 move game counter.  (This might be better handled in the Rules class or FEN)
     WHITE_PAWN_STARTING_ROW = 1
     BLACK_PAWN_STARTING_ROW = 6
+    transformationsWhite = [(1, 0), (2, 0), (1, -1), (1, 1)]
+    transformationsBlack = [(-1, 0), (-2, 0), (-1, -1), (-1, 1)]
 
     def special_move_maintenance_before_executing_move(self, board, destination_square):
         if destination_square == board.enPassantTargetSquare:
             # remove the pawn that created the en passant target square
             pawnToClearRow = board.get_row_number_from_square(self.current_square)
             pawnToClearCol = board.get_col_number_from_square(destination_square)
-            board.clear_square(board.get_square_from_row_and_col_coordinates(pawnToClearRow, pawnToClearCol))
+            board.update_square_with_piece(board.EMPTY_SQUARE, board.get_square_from_row_and_col_coordinates(pawnToClearRow, pawnToClearCol))
 
         elif self.is_forward_two_squares(board, destination_square) and self.is_on_starting_square(board):
             board.update_en_passant_target_square(self.get_square_one_forward(board))
@@ -190,6 +248,13 @@ class Pawn(Piece):
 
         return self.is_valid_square_to_attack(board, destination_square)
 
+    def get_possible_squares_to_move_to(self, board):
+        if self.is_white_piece():
+            transformations = self.transformationsWhite
+        else:
+            transformations = self.transformationsBlack
+        return self.get_possible_squares_from_transformations(board, transformations)
+
     def __str__(self):
         if self.color == 'w':
             return 'P'
@@ -204,6 +269,7 @@ class Rook(Piece):
     #    it reaches the square of an opponent's piece.  Replace the opponents piece with rook.
     # (castling is initiated by the king so does not need to be handled here.  The rook will be "teleported" to the other side of the king.
     isFirstMove = True
+    orthogonalTransformationsIncrementers = [(1, 0), (-1, 0), (0, 1), (0, -1)]
 
     def special_move_maintenance_before_executing_move(self, board, destination_square):
         # check to see if castling privileges should be revoked
@@ -224,6 +290,9 @@ class Rook(Piece):
 
         return board.is_empty_orthogonal_from(self.current_square, destination_square)
 
+    def get_possible_squares_to_move_to(self, board):
+        return self.get_possible_moves_using_incrementer(board, self.orthogonalTransformationsIncrementers)
+
     def __str__(self):
         if self.color == 'w':
             return 'R'
@@ -241,6 +310,7 @@ class Knight(Piece):
     #     The target square is on the board
     #     The target square is empty
     #     The target square contains an opponants piece
+    transformations = [(1, 2), (1, -2), (2, 1), (2, -1), (-1, 2), (-1, -2), (-2, 1), (-2, -1)]
 
     def is_legal_move(self, board, destination_square):
         if not self.is_viable_square_to_move_to(board, destination_square):
@@ -257,6 +327,9 @@ class Knight(Piece):
 
         return False
 
+    def get_possible_squares_to_move_to(self, board):
+        return self.get_possible_squares_from_transformations(board, self.transformations)
+
     def __str__(self):
         if self.color == 'w':
             return 'N'
@@ -265,10 +338,11 @@ class Knight(Piece):
 
 
 class Bishop(Piece):
-    # The bishop moves diaganoally on it's own color until it reaches:
+    # The bishop moves diagonally on it's own color until it reaches:
     #     The edge of the board
     #     a square directly before a piece of its own color
     #     a square containing an opponent's piece.
+    diagonalTransformationIncrementers = [(1, 1), (1, -1), (-1, 1), (-1, -1)]
 
     def is_diagonal_from(self, destination_square):
         pass
@@ -279,6 +353,9 @@ class Bishop(Piece):
 
         return board.is_empty_diagonal_from(self.current_square, destination_square)
 
+    def get_possible_squares_to_move_to(self, board):
+        return self.get_possible_moves_using_incrementer(board, self.diagonalTransformationIncrementers)
+
     def __str__(self):
         if self.color == 'w':
             return 'B'
@@ -288,6 +365,7 @@ class Bishop(Piece):
 
 class Queen(Piece):
     # The queens can move to any square that a bishop or rook can
+    diagonalAndOrthogonalTransformationIncrementers = [(1, 1), (1, -1), (-1, 1), (-1, -1), (1, 0), (-1, 0), (0, 1), (0, -1)]
 
     def is_legal_move(self, board, destination_square):
         if not self.is_viable_square_to_move_to(board, destination_square):
@@ -300,6 +378,9 @@ class Queen(Piece):
             return True
 
         return False
+
+    def get_possible_squares_to_move_to(self, board):
+        return self.get_possible_moves_using_incrementer(board, self.diagonalAndOrthogonalTransformationIncrementers)
 
     def __str__(self):
         if self.color == 'w':
@@ -319,7 +400,7 @@ class King(Piece):
     #      The rook it is moving toward has not already moved.
     #      There are no other pieces between the king and the rook (before castling is done)
     isFirstMove = True
-    transformations = [(1, 1), (1, 0), (1, -1), (0, 1), (0, -1), (-1, 1), (-1, 0), (-1, -1)]
+    transformations = [(1, 1), (1, 0), (1, -1), (0, 1), (0, -1), (-1, 1), (-1, 0), (-1, -1), (0, 2), (0, -2)]
     def special_move_maintenance_before_executing_move(self, board, destination_square):
         if self.isFirstMove:
             if self.is_legal_castling_move(board, destination_square):
@@ -406,17 +487,8 @@ class King(Piece):
         # check for castle
         return self.is_legal_castling_move(board, destination_square)
 
-    def get_possible_moves(self, board):
-        possibleSquares = []
-        currentCoordinates = board.get_row_and_col_coordinates_from_square(self.current_square)
-        for trans in self.transformations:
-            newCoordRow, newCoordCol = board.get_coordinates_after_applying_traversal_incrementer(currentCoordinates, trans)
-            if not board.is_coordinate_on_board(newCoordRow, newCoordCol):
-                continue
-            posSquare = board.get_square_from_row_and_col_coordinates(newCoordRow, newCoordCol)
-            if self.is_legal_move(board, posSquare):
-                possibleSquares.append(posSquare)
-        return possibleSquares
+    def get_possible_squares_to_move_to(self, board):
+        return self.get_possible_squares_from_transformations(board, self.transformations)
 
 
     def __str__(self):
