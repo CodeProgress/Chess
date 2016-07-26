@@ -657,6 +657,7 @@ class Tests(unittest.TestCase):
         self.board.execute_move('a3', 'b2')
         self.board.execute_move('f5', 'd6')
         self.assertTrue(self.board.is_game_over)
+        self.assertEquals("Checkmate!! White Wins", self.board.outcome)
 
     def test_two_move_mate(self):
         self.board.execute_move('f2', 'f3')
@@ -664,6 +665,7 @@ class Tests(unittest.TestCase):
         self.board.execute_move('g2', 'g4')
         self.board.execute_move('d8', 'h4')
         self.assertTrue(self.board.is_game_over)
+        self.assertEquals("Checkmate!! Black Wins", self.board.outcome)
 
     def test_four_move_mate(self):
         self.board.execute_move('e2', 'e4')
@@ -674,6 +676,117 @@ class Tests(unittest.TestCase):
         self.board.execute_move('a6', 'a5')
         self.board.execute_move('f3', 'f7')
         self.assertTrue(self.board.is_game_over)
+        self.assertEquals("Checkmate!! White Wins", self.board.outcome)
+
+    def test_three_move_mate(self):
+        self.board.execute_move('e2', 'e4')
+        self.board.execute_move('f7', 'f6')
+        self.board.execute_move('d2', 'd4')
+        self.board.execute_move('g7', 'g5')
+        self.board.execute_move('d1', 'h5')
+        self.assertTrue(self.board.is_game_over)
+        self.assertEquals("Checkmate!! White Wins", self.board.outcome)
+
+    def test_queen_and_bishop_mate(self):
+        self.board.execute_move('e2', 'e4')
+        self.board.execute_move('e7', 'e5')
+        self.board.execute_move('f2', 'f4')
+        self.board.execute_move('f8', 'c5')
+        self.board.execute_move('f4', 'e5')
+        self.board.execute_move('d8', 'h4')
+        self.board.execute_move('e1', 'e2')
+        self.board.execute_move('h4', 'e4')
+        self.assertTrue(self.board.is_game_over)
+        self.assertEquals("Checkmate!! Black Wins", self.board.outcome)
+
+    def test_knights_and_bishop_mate(self):
+        self.board.execute_move('e2', 'e4')
+        self.board.execute_move('e7', 'e5')
+        self.board.execute_move('g1', 'f3')
+        self.board.execute_move('d7', 'd6')
+        self.board.execute_move('f1', 'c4')
+        self.board.execute_move('h7', 'h6')
+        self.board.execute_move('b1', 'c3')
+        self.board.execute_move('c8', 'g4')
+        self.board.execute_move('f3', 'e5')
+        self.board.execute_move('g4', 'd1')
+        self.board.execute_move('c4', 'f7')
+        self.board.execute_move('e8', 'e7')
+        self.board.execute_move('c3', 'd5')
+        self.assertTrue(self.board.is_game_over)
+        self.assertEquals("Checkmate!! White Wins", self.board.outcome)
+
+    def test_black_smother_mate(self):
+        self.board.execute_move('e2', 'e4')
+        self.board.execute_move('b8', 'c6')
+        self.board.execute_move('g2', 'g4')
+        self.board.execute_move('c6', 'd4')
+        self.board.execute_move('g1', 'e2')
+        self.board.execute_move('d4', 'f3')
+        self.assertTrue(self.board.is_game_over)
+        self.assertEquals("Checkmate!! Black Wins", self.board.outcome)
+
+    def test_queen_mate(self):
+        self.board.execute_move('e2', 'e4')
+        self.board.execute_move('e7', 'e5')
+        self.board.execute_move('d1', 'h5')
+        self.board.execute_move('e8', 'e7')
+        self.board.execute_move('h5', 'e5')
+        self.assertTrue(self.board.is_game_over)
+        self.assertEquals("Checkmate!! White Wins", self.board.outcome)
+
+    def test_bishop_and_rook_mate(self):
+        self.board.execute_move('g2', 'g4')
+        self.board.execute_move('h7', 'h5')
+        self.board.execute_move('f1', 'g2')
+        self.board.execute_move('h5', 'g4')
+        self.board.execute_move('g2', 'b7')
+        self.board.execute_move('h8', 'h2')
+        self.board.execute_move('g1', 'h3')
+        self.board.execute_move('c8', 'b7')
+        self.board.execute_move('e1', 'g1')  # castle
+        self.board.execute_move('h2', 'h1')
+        self.assertTrue(self.board.is_game_over)
+        self.assertEquals("Checkmate!! Black Wins", self.board.outcome)
+
+    def test_mate_delivered_by_castling(self):
+        self.verify_legal_move(Pieces.Pawn ,'d2', 'd4')
+        self.verify_legal_move(Pieces.Pawn, 'f7', 'f5')
+        self.verify_legal_move(Pieces.Knight, 'b1', 'c3')
+        self.verify_legal_move(Pieces.Knight, 'g8', 'f6')
+        self.verify_legal_move(Pieces.Knight, 'g1', 'f3')
+        self.verify_legal_move(Pieces.Pawn, 'e7', 'e6')
+        self.verify_legal_move(Pieces.Bishop, 'c1', 'g5')
+        self.verify_legal_move(Pieces.Bishop, 'f8', 'e7')
+        self.verify_legal_move(Pieces.Bishop, 'g5', 'f6')
+        self.verify_legal_move(Pieces.Bishop, 'e7', 'f6')
+        self.verify_legal_move(Pieces.Pawn, 'e2', 'e4')
+        self.verify_legal_move(Pieces.Pawn, 'f5', 'e4')
+        self.verify_legal_move(Pieces.Knight, 'c3', 'e4')
+        self.verify_legal_move(Pieces.Pawn, 'b7', 'b6')
+        self.verify_legal_move(Pieces.Knight, 'f3', 'e5')
+        self.verify_legal_move(Pieces.King, 'e8', 'g8')
+        self.verify_legal_move(Pieces.Bishop, 'f1', 'd3')
+        self.verify_legal_move(Pieces.Bishop, 'c8', 'b7')
+        self.verify_legal_move(Pieces.Queen, 'd1', 'h5')
+        self.verify_legal_move(Pieces.Queen, 'd8', 'e7')  # now mate in 8!
+        self.verify_legal_move(Pieces.Queen, 'h5', 'h7')
+        self.verify_legal_move(Pieces.King, 'g8', 'h7')
+        self.verify_legal_move(Pieces.Knight, 'e4', 'f6')  # double check
+        self.verify_legal_move(Pieces.King, 'h7', 'h6')
+        self.verify_legal_move(Pieces.Knight, 'e5', 'g4')
+        self.verify_legal_move(Pieces.King, 'h6', 'g5')
+        self.verify_legal_move(Pieces.Pawn, 'h2', 'h4')
+        self.verify_legal_move(Pieces.King, 'g5', 'f4')
+        self.verify_legal_move(Pieces.Pawn, 'g2', 'g3')
+        self.verify_legal_move(Pieces.King, 'f4', 'f3')
+        self.verify_legal_move(Pieces.Bishop, 'd3', 'e2')
+        self.verify_legal_move(Pieces.King, 'f3', 'g2')
+        self.verify_legal_move(Pieces.Rook, 'h1', 'h2')
+        self.verify_legal_move(Pieces.King, 'g2', 'g1')
+        self.verify_legal_move(Pieces.King, 'e1', 'c1')  # castle long, Mate!
+        self.assertTrue(self.board.is_game_over)
+        self.assertEquals("Checkmate!! White Wins", self.board.outcome)
 
     def test_first_side_to_move_is_white(self):
         self.assertTrue(self.board.is_whites_turn())

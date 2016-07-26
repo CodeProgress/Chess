@@ -433,7 +433,7 @@ class ChessBoard:
             if type(attackingPiece) == Pieces.Queen or type(attackingPiece) == Pieces.Bishop or type(attackingPiece) == Pieces.Rook:
                 squaresAlongPath = self.get_squares_along_path(king.current_square, squareOfAttackingPiece)
                 for sq in squaresAlongPath:
-                    if self.is_square_under_attack_from_non_king_piece(sq, king.color):
+                    if self.can_move_to_square_with_non_king_piece(sq, king.color):
                         return False
         # if len > 1, that's double check and would have needed to be a king move which was already determined
 
@@ -496,7 +496,7 @@ class ChessBoard:
     def is_blacks_turn(self):
         return self.sideToMove == 1
 
-    def is_square_under_attack(self, square, colorOfAttackingSide, includeKing=False):
+    def is_square_under_attack(self, square, colorOfAttackingSide, includeKing=True):
         if colorOfAttackingSide == Pieces.Piece.WHITE:
             pieceList = self.white_pieces_on_the_board
             kingToValidate = self.whiteKing
@@ -504,9 +504,8 @@ class ChessBoard:
             pieceList = self.black_pieces_on_the_board
             kingToValidate = self.blackKing
         for piece in pieceList:
-            if includeKing:
-                if type(piece) == Pieces.King:
-                    continue
+            if not includeKing and type(piece) == Pieces.King:
+                continue
             if type(piece) == Pieces.Pawn:
                 if piece.is_valid_square_to_attack(self, square) and self.is_king_in_check_after_simulating_move(piece.current_square, square, kingToValidate):
                     return True
@@ -516,7 +515,7 @@ class ChessBoard:
         return False
 
     def is_square_under_attack_from_non_king_piece(self, square, colorOfAttackingSide):
-        return self.is_square_under_attack(square, colorOfAttackingSide, True)
+        return self.is_square_under_attack(square, colorOfAttackingSide, False)
 
     def can_move_to_square_with_non_king_piece(self, square, colorToMove):
         if colorToMove == Pieces.Piece.WHITE:
