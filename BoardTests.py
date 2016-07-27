@@ -11,6 +11,49 @@ class Tests(unittest.TestCase):
     def tearDown(self):
         self.board = None
 
+    def is_pawn_promotion(self, piece, destination):
+        return (
+            piece == Pieces.Pawn
+            and (
+                self.board.get_row_number_from_square(destination) == 0
+                or self.board.get_row_number_from_square(destination) == 7
+            )
+        )
+
+    def verify_piece_is_properly_moved(self, piece, destination):
+        if not self.is_pawn_promotion(piece, destination):
+            self.assertEquals(piece, type(self.board.get_contents_of_square(destination)),
+                          "Square does not contain the correct piece")
+        else:
+            # auto-promotion is to queen, other promotions tested in specific pawn promotion tests
+            self.assertEquals(Pieces.Queen, type(self.board.get_contents_of_square(destination)),
+                              "Square does not contain the correct piece")
+
+    def verify_legal_move(self, piece, origin, destination):
+        self.assertTrue(self.board.get_contents_of_square(origin).is_legal_move(self.board, destination))
+        self.board.execute_move(origin, destination)
+        self.verify_piece_is_properly_moved(piece, destination)
+        self.assertTrue(self.board.is_square_empty(origin))
+
+    def verify_illegal_move_is_not_made(self, piece, origin, destination):
+        self.assertFalse(self.board.is_valid_move(origin, destination))
+        isDestinationSquareInitiallyEmpty = self.board.is_square_empty(destination)
+        self.board.execute_move(origin, destination)
+        self.assertEquals(piece, type(self.board.get_contents_of_square(origin)),
+                          "Square does not contain the correct piece")
+        if isDestinationSquareInitiallyEmpty:
+            self.assertTrue(self.board.is_square_empty(destination))
+
+
+class MaintenenceTests(Tests):
+    def setUp(self):
+        self.board = Board.ChessBoard()
+        self.board.ignore_move_order = True
+        self.longMessage = True
+
+    def test_first_side_to_move_is_white(self):
+        self.assertTrue(self.board.is_whites_turn())
+
     def test_converting_algebraic_notation_to_numerical_coordinates(self):
         cols = 'abcdefgh'
         for row in range(8):
@@ -55,6 +98,13 @@ class Tests(unittest.TestCase):
         actual_board_printout = str(self.board)
         self.assertEquals(expected_board_printout, actual_board_printout, "Board position printout does not properly reflect executed moves")
 
+
+class MoveSpecificTests(Tests):
+    def setUp(self):
+        self.board = Board.ChessBoard()
+        self.board.ignore_move_order = True
+        self.longMessage = True
+
     def test_squares_contain_correct_piece_types_after_first_four_moves(self):
         self.board.execute_move('d2', 'd4')    # White Pawn
         self.board.execute_move('b7', 'b5')    # Black Pawn
@@ -84,38 +134,6 @@ class Tests(unittest.TestCase):
         self.assertEquals('c6', self.board.get_contents_of_square('c6').current_square,
                           "Piece's current square incorrect after moving to a new square")
 
-    def is_pawn_promotion(self, piece, destination):
-        return (
-            piece == Pieces.Pawn
-            and (
-                self.board.get_row_number_from_square(destination) == 0
-                or self.board.get_row_number_from_square(destination) == 7
-            )
-        )
-
-    def verify_piece_is_properly_moved(self, piece, destination):
-        if not self.is_pawn_promotion(piece, destination):
-            self.assertEquals(piece, type(self.board.get_contents_of_square(destination)),
-                          "Square does not contain the correct piece")
-        else:
-            # auto-promotion is to queen, other promotions tested in specific pawn promotion tests
-            self.assertEquals(Pieces.Queen, type(self.board.get_contents_of_square(destination)),
-                              "Square does not contain the correct piece")
-
-    def verify_legal_move(self, piece, origin, destination):
-        self.assertTrue(self.board.get_contents_of_square(origin).is_legal_move(self.board, destination))
-        self.board.execute_move(origin, destination)
-        self.verify_piece_is_properly_moved(piece, destination)
-        self.assertTrue(self.board.is_square_empty(origin))
-
-    def verify_illegal_move_is_not_made(self, piece, origin, destination):
-        self.assertFalse(self.board.is_valid_move(origin, destination))
-        isDestinationSquareInitiallyEmpty = self.board.is_square_empty(destination)
-        self.board.execute_move(origin, destination)
-        self.assertEquals(piece, type(self.board.get_contents_of_square(origin)),
-                          "Square does not contain the correct piece")
-        if isDestinationSquareInitiallyEmpty:
-            self.assertTrue(self.board.is_square_empty(destination))
 
     def test_legal_knight_moves(self):
         # white side
@@ -620,7 +638,8 @@ class Tests(unittest.TestCase):
         self.verify_legal_move(Pieces.King, 'e1', 'e2')
         self.board.execute_move('f2', 'f3')
         self.board.execute_move('g8', 'f6')
-        self.board.execute_move('f2', 'f3')
+        self.board.execute_move('h2', 'h3')
+        self.board.execute_move('h3', 'h4')
         self.board.execute_move('f6', 'g4')
         self.board.execute_move('a3', 'a4')
         self.verify_illegal_move_is_not_made(Pieces.King, 'e2', 'f2')
@@ -642,12 +661,13 @@ class Tests(unittest.TestCase):
         self.board.execute_move('e4', 'e5')
         self.verify_illegal_move_is_not_made(Pieces.Pawn, 'e5', 'd6')
 
+
+class FullGameTests(Tests):
     def test_smother_mate(self):
         self.board.execute_move('h2', 'h4')
         self.board.execute_move('a7', 'a6')
         self.board.execute_move('h1', 'h3')
         self.board.execute_move('a6', 'a5')
-        x = self.board.get_contents_of_square('h3').all_legal_squares_to_move_to(self.board)
         self.board.execute_move('h3', 'e3')
         self.board.execute_move('a5', 'a4')
         self.board.execute_move('g1', 'f3')
@@ -678,6 +698,17 @@ class Tests(unittest.TestCase):
         self.board.execute_move('f3', 'f7')
         self.assertTrue(self.board.is_game_over)
         self.assertEquals("Checkmate!! White Wins", self.board.outcome)
+
+    def test_defense_against_four_move_mate(self):
+        self.board.execute_move('e2', 'e4')
+        self.board.execute_move('e7', 'e5')
+        self.board.execute_move('f1', 'c4')
+        self.board.execute_move('a7', 'a6')
+        self.board.execute_move('d1', 'f3')
+        self.board.execute_move('g8', 'h6')
+        self.board.execute_move('f3', 'f7')
+        self.assertFalse(self.board.is_game_over)
+        self.assertNotEqual("Checkmate!! White Wins", self.board.outcome)
 
     def test_three_move_mate(self):
         self.board.execute_move('e2', 'e4')
@@ -893,11 +924,40 @@ class Tests(unittest.TestCase):
         self.assertTrue(self.board.is_game_over)
         self.assertEquals("Stalemate! Draw", self.board.outcome)
 
-    def test_first_side_to_move_is_white(self):
-        self.assertTrue(self.board.is_whites_turn())
-
-# ---- Unfinished Tests ---- #
-
-    # def test_example_game_start_to_finish_with_invalid_moves_mixed_in(self):
-    #     # using the Game class
-    #     pass
+    def test_morphy_night_at_the_opera_game(self):
+        # Morphy vs Duke Karl, 1858 Paris
+        self.board.execute_move('e2', 'e4')
+        self.board.execute_move('e7', 'e5')
+        self.board.execute_move('g1', 'f3')
+        self.board.execute_move('d7', 'd6')
+        self.board.execute_move('d2', 'd4')
+        self.board.execute_move('c8', 'g4')
+        self.board.execute_move('d4', 'e5')
+        self.board.execute_move('g4', 'f3')
+        self.board.execute_move('d1', 'f3')
+        self.board.execute_move('d6', 'e5')
+        self.board.execute_move('f1', 'c4')
+        self.board.execute_move('g8', 'f6')
+        self.board.execute_move('f3', 'b3')
+        self.board.execute_move('d8', 'e7')
+        self.board.execute_move('b1', 'c3')
+        self.board.execute_move('c7', 'c6')
+        self.board.execute_move('c1', 'g5')
+        self.board.execute_move('b7', 'b5')
+        self.board.execute_move('c3', 'b5')
+        self.board.execute_move('c6', 'b5')
+        self.board.execute_move('c4', 'b5')
+        self.board.execute_move('b8', 'd7')
+        self.board.execute_move('e1', 'c1')
+        self.board.execute_move('a8', 'd8')
+        self.board.execute_move('d1', 'd7')
+        self.board.execute_move('d8', 'd7')
+        self.board.execute_move('h1', 'd1')
+        self.board.execute_move('e7', 'e6')
+        self.board.execute_move('b5', 'd7')
+        self.board.execute_move('f6', 'd7')
+        self.board.execute_move('b3', 'b8')
+        self.board.execute_move('d7', 'b8')
+        self.board.execute_move('d1', 'd8')
+        self.assertTrue(self.board.is_game_over)
+        self.assertEquals("Checkmate!! White Wins", self.board.outcome)

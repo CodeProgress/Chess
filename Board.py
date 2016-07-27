@@ -15,6 +15,7 @@ class ChessBoard:
         self.past_game_states = {}
         self.fifty_move_counter = 0
         self.outcome = None
+        self.ignore_move_order = False
         self.squaresAttackingWhiteKing = []  # check, double check
         self.squaresAttackingBlackKing = []
         self.pieces_off_the_board = []
@@ -240,22 +241,25 @@ class ChessBoard:
 
         return copyOfBoard.is_square_under_attack(squareOfKingAfterMove, kingToValidate.get_color_of_opponent_side())
 
-    def is_valid_move(self, originSquare, destinationSquare):
-        # This is the super method that must incorporate all of the rules of the game
-        # possible overlap between this and execute_move method.
-        # perhaps this is better handled in the game/rules class (or at least the non-piece specific parts)
-
-        if originSquare == destinationSquare:
+    def is_valid_move_order(self, originPiece):
+        if self.ignore_move_order:
+            return True
+        if originPiece.is_white_piece() and not self.is_whites_turn():
             return False
+        elif originPiece.is_black_piece() and not self.is_blacks_turn():
+            return False
+        return True
 
-        # is legal move from the piece's perspective:
+    def is_valid_move(self, originSquare, destinationSquare):
         if self.is_square_empty(originSquare):
             return False
+
         originPiece = self.get_contents_of_square(originSquare)
-        if not originPiece.is_legal_move(self, destinationSquare):
+
+        if not self.is_valid_move_order(originPiece):
             return False
 
-        return not self.is_king_in_check_after_simulating_move(originSquare, destinationSquare, self.get_king_of_side_that_is_moving())
+        return originPiece.is_legal_move(self, destinationSquare)
 
     def get_king_of_side_that_is_moving(self):
         if self.is_whites_turn():
@@ -359,6 +363,8 @@ class ChessBoard:
                 self.is_game_over = True
             else:
                 self.update_side_to_move()
+            return True
+        return False
 
     def make_move(self, originSquare, destinationSquare):
         # blindly makes move without regard to validation
@@ -386,7 +392,9 @@ class ChessBoard:
         if not self.is_valid_square(originSquare) or not self.is_valid_square(destinationSquare):
             return False
 
-        self.execute_move(originSquare, destinationSquare)
+        if not self.execute_move(originSquare, destinationSquare):
+            return False
+
         self.promotePawnTo = None
         return True
 
@@ -418,14 +426,13 @@ class ChessBoard:
             squaresAttackingKing = self.squaresAttackingBlackKing
 
         # King move (for single check and double check)
-        for posSqToMoveTo in king.all_legal_squares_to_move_to(self):
-            if not self.is_king_in_check_after_simulating_move(king.current_square, posSqToMoveTo, king):
-                return False
+        if king.all_legal_squares_to_move_to(self):
+            return False
 
         if len(squaresAttackingKing) == 1:
             squareOfAttackingPiece = squaresAttackingKing[0]
             # capture square
-            if self.is_square_under_attack_from_non_king_piece(squareOfAttackingPiece, king.get_color_of_opponent_side()):
+            if self.is_square_under_attack_from_non_king_piece(squareOfAttackingPiece, king.color):
                 return False
 
             # block path
@@ -515,7 +522,7 @@ class ChessBoard:
             if not includeKing and type(piece) == Pieces.King:
                 continue
             if type(piece) == Pieces.Pawn:
-                if piece.is_valid_square_to_attack(self, square):
+                if piece.is_valid_square_to_attack(self, square) and piece.is_legal_move(self, square):
                     return True
             else:
                 if piece.is_legal_move(self, square):

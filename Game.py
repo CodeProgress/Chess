@@ -11,6 +11,7 @@ class Game:
             self.play_move()
             if verbose:
                 print self.board
+
         print "Game Over! {}".format(self.board.outcome)
 
     def is_game_over(self):
@@ -18,7 +19,8 @@ class Game:
 
     def play_move(self):
         move = raw_input("Enter move: (example: e2e4): ")
-        self.board.attempt_to_make_move(move)
+        if not self.board.attempt_to_make_move(move):
+            print "\n Invalid Move! \n"
 
 g = Game()
 
