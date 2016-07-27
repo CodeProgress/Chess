@@ -22,6 +22,7 @@ class Game:
         if not self.board.attempt_to_make_move(move):
             print "\n Invalid Move! \n"
 
+
 g = Game()
 
 g.play_game(True)
