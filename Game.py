@@ -8,11 +8,11 @@ class Game:
 
     def play_game(self, verbose=False):
         while not self.is_game_over():
-            self.play_move()
             if verbose:
                 print self.board
+            self.play_move()
 
-        print "Game Over! {}".format(self.board.outcome)
+        print str(self.board) + "\n" + "Game Over! {}".format(self.board.outcome)
 
     def is_game_over(self):
         return self.board.is_game_over

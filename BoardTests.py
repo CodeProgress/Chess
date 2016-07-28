@@ -684,6 +684,18 @@ class FullGameTests(Tests):
         self.assertTrue(self.board.is_game_over)
         self.assertEquals("Checkmate!! White Wins", self.board.outcome)
 
+        expected_board_printout = "8 | r n b q k b n r" + "\n" \
+                                  "7 | ~ p ~ p p p p p" + "\n" \
+                                  "6 | ~ ~ p N ~ ~ ~ ~" + "\n" \
+                                  "5 | ~ ~ ~ ~ ~ ~ ~ ~" + "\n" \
+                                  "4 | ~ ~ ~ ~ ~ ~ ~ P" + "\n" \
+                                  "3 | ~ ~ ~ ~ R ~ ~ ~" + "\n" \
+                                  "2 | P p P P P P P ~" + "\n" \
+                                  "1 | R N B Q K B ~ ~" + "\n" \
+                                  "   ----------------" + "\n" \
+                                  "    a b c d e f g h"
+        self.assertEquals(expected_board_printout, str(self.board))
+
     def test_two_move_mate(self):
         self.board.execute_move('f2', 'f3')
         self.board.execute_move('e7', 'e5')
@@ -691,6 +703,18 @@ class FullGameTests(Tests):
         self.board.execute_move('d8', 'h4')
         self.assertTrue(self.board.is_game_over)
         self.assertEquals("Checkmate!! Black Wins", self.board.outcome)
+
+        expected_board_printout = "8 | r n b ~ k b n r" + "\n" \
+                                  "7 | p p p p ~ p p p" + "\n" \
+                                  "6 | ~ ~ ~ ~ ~ ~ ~ ~" + "\n" \
+                                  "5 | ~ ~ ~ ~ p ~ ~ ~" + "\n" \
+                                  "4 | ~ ~ ~ ~ ~ ~ P q" + "\n" \
+                                  "3 | ~ ~ ~ ~ ~ P ~ ~" + "\n" \
+                                  "2 | P P P P P ~ ~ P" + "\n" \
+                                  "1 | R N B Q K B N R" + "\n" \
+                                  "   ----------------" + "\n" \
+                                  "    a b c d e f g h"
+        self.assertEquals(expected_board_printout, str(self.board))
 
     def test_four_move_mate(self):
         self.board.execute_move('e2', 'e4')
@@ -703,6 +727,18 @@ class FullGameTests(Tests):
         self.assertTrue(self.board.is_game_over)
         self.assertEquals("Checkmate!! White Wins", self.board.outcome)
 
+        expected_board_printout = "8 | r n b q k b n r" + "\n" \
+                                  "7 | ~ p p p ~ Q p p" + "\n" \
+                                  "6 | ~ ~ ~ ~ ~ ~ ~ ~" + "\n" \
+                                  "5 | p ~ ~ ~ p ~ ~ ~" + "\n" \
+                                  "4 | ~ ~ B ~ P ~ ~ ~" + "\n" \
+                                  "3 | ~ ~ ~ ~ ~ ~ ~ ~" + "\n" \
+                                  "2 | P P P P ~ P P P" + "\n" \
+                                  "1 | R N B ~ K ~ N R" + "\n" \
+                                  "   ----------------" + "\n" \
+                                  "    a b c d e f g h"
+        self.assertEquals(expected_board_printout, str(self.board))
+
     def test_defense_against_four_move_mate(self):
         self.board.execute_move('e2', 'e4')
         self.board.execute_move('e7', 'e5')
@@ -712,7 +748,19 @@ class FullGameTests(Tests):
         self.board.execute_move('g8', 'h6')
         self.board.execute_move('f3', 'f7')
         self.assertFalse(self.board.is_game_over)
-        self.assertNotEqual("Checkmate!! White Wins", self.board.outcome)
+        self.assertNotEqual("Checkmate!! White Wins", self.board.outcome)  # Note, assert False, not checkmate
+
+        expected_board_printout = "8 | r n b q k b ~ r" + "\n" \
+                                  "7 | ~ p p p ~ Q p p" + "\n" \
+                                  "6 | p ~ ~ ~ ~ ~ ~ n" + "\n" \
+                                  "5 | ~ ~ ~ ~ p ~ ~ ~" + "\n" \
+                                  "4 | ~ ~ B ~ P ~ ~ ~" + "\n" \
+                                  "3 | ~ ~ ~ ~ ~ ~ ~ ~" + "\n" \
+                                  "2 | P P P P ~ P P P" + "\n" \
+                                  "1 | R N B ~ K ~ N R" + "\n" \
+                                  "   ----------------" + "\n" \
+                                  "    a b c d e f g h"
+        self.assertEquals(expected_board_printout, str(self.board))
 
     def test_three_move_mate(self):
         self.board.execute_move('e2', 'e4')
@@ -722,6 +770,18 @@ class FullGameTests(Tests):
         self.board.execute_move('d1', 'h5')
         self.assertTrue(self.board.is_game_over)
         self.assertEquals("Checkmate!! White Wins", self.board.outcome)
+
+        expected_board_printout = "8 | r n b q k b n r" + "\n" \
+                                  "7 | p p p p p ~ ~ p" + "\n" \
+                                  "6 | ~ ~ ~ ~ ~ p ~ ~" + "\n" \
+                                  "5 | ~ ~ ~ ~ ~ ~ p Q" + "\n" \
+                                  "4 | ~ ~ ~ P P ~ ~ ~" + "\n" \
+                                  "3 | ~ ~ ~ ~ ~ ~ ~ ~" + "\n" \
+                                  "2 | P P P ~ ~ P P P" + "\n" \
+                                  "1 | R N B ~ K B N R" + "\n" \
+                                  "   ----------------" + "\n" \
+                                  "    a b c d e f g h"
+        self.assertEquals(expected_board_printout, str(self.board))
 
     def test_queen_and_bishop_mate(self):
         self.board.execute_move('e2', 'e4')
@@ -734,6 +794,18 @@ class FullGameTests(Tests):
         self.board.execute_move('h4', 'e4')
         self.assertTrue(self.board.is_game_over)
         self.assertEquals("Checkmate!! Black Wins", self.board.outcome)
+
+        expected_board_printout = "8 | r n b ~ k ~ n r" + "\n" \
+                                  "7 | p p p p ~ p p p" + "\n" \
+                                  "6 | ~ ~ ~ ~ ~ ~ ~ ~" + "\n" \
+                                  "5 | ~ ~ b ~ P ~ ~ ~" + "\n" \
+                                  "4 | ~ ~ ~ ~ q ~ ~ ~" + "\n" \
+                                  "3 | ~ ~ ~ ~ ~ ~ ~ ~" + "\n" \
+                                  "2 | P P P P K ~ P P" + "\n" \
+                                  "1 | R N B Q ~ B N R" + "\n" \
+                                  "   ----------------" + "\n" \
+                                  "    a b c d e f g h"
+        self.assertEquals(expected_board_printout, str(self.board))
 
     def test_knights_and_bishop_mate(self):
         self.board.execute_move('e2', 'e4')
@@ -752,6 +824,18 @@ class FullGameTests(Tests):
         self.assertTrue(self.board.is_game_over)
         self.assertEquals("Checkmate!! White Wins", self.board.outcome)
 
+        expected_board_printout = "8 | r n ~ q ~ b n r" + "\n" \
+                                  "7 | p p p ~ k B p ~" + "\n" \
+                                  "6 | ~ ~ ~ p ~ ~ ~ p" + "\n" \
+                                  "5 | ~ ~ ~ N N ~ ~ ~" + "\n" \
+                                  "4 | ~ ~ ~ ~ P ~ ~ ~" + "\n" \
+                                  "3 | ~ ~ ~ ~ ~ ~ ~ ~" + "\n" \
+                                  "2 | P P P P ~ P P P" + "\n" \
+                                  "1 | R ~ B b K ~ ~ R" + "\n" \
+                                  "   ----------------" + "\n" \
+                                  "    a b c d e f g h"
+        self.assertEquals(expected_board_printout, str(self.board))
+
     def test_black_smother_mate(self):
         self.board.execute_move('e2', 'e4')
         self.board.execute_move('b8', 'c6')
@@ -762,6 +846,18 @@ class FullGameTests(Tests):
         self.assertTrue(self.board.is_game_over)
         self.assertEquals("Checkmate!! Black Wins", self.board.outcome)
 
+        expected_board_printout = "8 | r ~ b q k b n r" + "\n" \
+                                  "7 | p p p p p p p p" + "\n" \
+                                  "6 | ~ ~ ~ ~ ~ ~ ~ ~" + "\n" \
+                                  "5 | ~ ~ ~ ~ ~ ~ ~ ~" + "\n" \
+                                  "4 | ~ ~ ~ ~ P ~ P ~" + "\n" \
+                                  "3 | ~ ~ ~ ~ ~ n ~ ~" + "\n" \
+                                  "2 | P P P P N P ~ P" + "\n" \
+                                  "1 | R N B Q K B ~ R" + "\n" \
+                                  "   ----------------" + "\n" \
+                                  "    a b c d e f g h"
+        self.assertEquals(expected_board_printout, str(self.board))
+
     def test_queen_mate(self):
         self.board.execute_move('e2', 'e4')
         self.board.execute_move('e7', 'e5')
@@ -770,6 +866,18 @@ class FullGameTests(Tests):
         self.board.execute_move('h5', 'e5')
         self.assertTrue(self.board.is_game_over)
         self.assertEquals("Checkmate!! White Wins", self.board.outcome)
+
+        expected_board_printout = "8 | r n b q ~ b n r" + "\n" \
+                                  "7 | p p p p k p p p" + "\n" \
+                                  "6 | ~ ~ ~ ~ ~ ~ ~ ~" + "\n" \
+                                  "5 | ~ ~ ~ ~ Q ~ ~ ~" + "\n" \
+                                  "4 | ~ ~ ~ ~ P ~ ~ ~" + "\n" \
+                                  "3 | ~ ~ ~ ~ ~ ~ ~ ~" + "\n" \
+                                  "2 | P P P P ~ P P P" + "\n" \
+                                  "1 | R N B ~ K B N R" + "\n" \
+                                  "   ----------------" + "\n" \
+                                  "    a b c d e f g h"
+        self.assertEquals(expected_board_printout, str(self.board))
 
     def test_bishop_and_rook_mate(self):
         self.board.execute_move('g2', 'g4')
@@ -784,6 +892,18 @@ class FullGameTests(Tests):
         self.board.execute_move('h2', 'h1')
         self.assertTrue(self.board.is_game_over)
         self.assertEquals("Checkmate!! Black Wins", self.board.outcome)
+
+        expected_board_printout = "8 | r n ~ q k b n ~" + "\n" \
+                                  "7 | p b p p p p p ~" + "\n" \
+                                  "6 | ~ ~ ~ ~ ~ ~ ~ ~" + "\n" \
+                                  "5 | ~ ~ ~ ~ ~ ~ ~ ~" + "\n" \
+                                  "4 | ~ ~ ~ ~ ~ ~ p ~" + "\n" \
+                                  "3 | ~ ~ ~ ~ ~ ~ ~ N" + "\n" \
+                                  "2 | P P P P P P ~ ~" + "\n" \
+                                  "1 | R N B Q ~ R K r" + "\n" \
+                                  "   ----------------" + "\n" \
+                                  "    a b c d e f g h"
+        self.assertEquals(expected_board_printout, str(self.board))
 
     def test_mate_delivered_by_castling(self):
         self.verify_legal_move(Pieces.Pawn, 'd2', 'd4')
@@ -823,6 +943,19 @@ class FullGameTests(Tests):
         self.verify_legal_move(Pieces.King, 'e1', 'c1')  # castle long, Mate!
         self.assertTrue(self.board.is_game_over)
         self.assertEquals("Checkmate!! White Wins", self.board.outcome)
+
+        expected_board_printout = "8 | r n ~ ~ ~ r ~ ~" + "\n" \
+                                  "7 | p b p p q ~ p ~" + "\n" \
+                                  "6 | ~ p ~ ~ p N ~ ~" + "\n" \
+                                  "5 | ~ ~ ~ ~ ~ ~ ~ ~" + "\n" \
+                                  "4 | ~ ~ ~ P ~ ~ N P" + "\n" \
+                                  "3 | ~ ~ ~ ~ ~ ~ P ~" + "\n" \
+                                  "2 | P P P ~ B P ~ R" + "\n" \
+                                  "1 | ~ ~ K R ~ ~ k ~" + "\n" \
+                                  "   ----------------" + "\n" \
+                                  "    a b c d e f g h"
+        self.assertEquals(expected_board_printout, str(self.board))
+
 
     def test_stalemate_game(self):
         self.board.execute_move('h2', 'h4')
@@ -875,6 +1008,18 @@ class FullGameTests(Tests):
         self.assertTrue(self.board.is_game_over)
         self.assertEquals("Stalemate! Draw", self.board.outcome)
 
+        expected_board_printout = "8 | ~ ~ ~ ~ ~ ~ ~ k" + "\n" \
+                                  "7 | ~ ~ ~ ~ ~ ~ ~ ~" + "\n" \
+                                  "6 | ~ ~ p ~ N N ~ ~" + "\n" \
+                                  "5 | ~ p P p P p ~ p" + "\n" \
+                                  "4 | p P ~ P ~ P p P" + "\n" \
+                                  "3 | P ~ ~ ~ ~ ~ P ~" + "\n" \
+                                  "2 | ~ ~ ~ ~ ~ ~ ~ ~" + "\n" \
+                                  "1 | R ~ B Q K B ~ R" + "\n" \
+                                  "   ----------------" + "\n" \
+                                  "    a b c d e f g h"
+        self.assertEquals(expected_board_printout, str(self.board))
+
     def test_fastest_stalemate_with_all_pieces_on_board(self):
         # composed by Sam Loyd early 1900s
         self.board.execute_move('d2', 'd4')
@@ -904,6 +1049,19 @@ class FullGameTests(Tests):
         self.assertTrue(self.board.is_game_over)
         self.assertEquals("Stalemate! Draw", self.board.outcome)
 
+        expected_board_printout = "8 | r n ~ ~ k ~ n r" + "\n" \
+                                  "7 | p p ~ ~ ~ ~ p p" + "\n" \
+                                  "6 | ~ ~ ~ p ~ ~ ~ ~" + "\n" \
+                                  "5 | q ~ p P ~ ~ ~ ~" + "\n" \
+                                  "4 | P ~ P ~ ~ p ~ b" + "\n" \
+                                  "3 | ~ b ~ ~ p P R P" + "\n" \
+                                  "2 | ~ P ~ N P ~ P Q" + "\n" \
+                                  "1 | ~ ~ B ~ K B N R" + "\n" \
+                                  "   ----------------" + "\n" \
+                                  "    a b c d e f g h"
+
+        self.assertEquals(expected_board_printout, str(self.board))
+
     def test_fastest_stalemate(self):
         # composed by Sam Loyd early 1900s
         self.board.execute_move('c2', 'c4')
@@ -927,6 +1085,20 @@ class FullGameTests(Tests):
         self.board.execute_move('c8', 'e6')
         self.assertTrue(self.board.is_game_over)
         self.assertEquals("Stalemate! Draw", self.board.outcome)
+
+        expected_board_printout = "8 | ~ ~ ~ ~ ~ b n r" + "\n" \
+                                  "7 | ~ ~ ~ ~ p ~ p q" + "\n" \
+                                  "6 | ~ ~ ~ ~ Q p k r" + "\n" \
+                                  "5 | ~ ~ ~ ~ ~ ~ ~ p" + "\n" \
+                                  "4 | ~ ~ P ~ ~ ~ ~ P" + "\n" \
+                                  "3 | ~ ~ ~ ~ ~ ~ ~ ~" + "\n" \
+                                  "2 | P P ~ P P P P ~" + "\n" \
+                                  "1 | R N B ~ K B N R" + "\n" \
+                                  "   ----------------" + "\n" \
+                                  "    a b c d e f g h"
+
+        self.assertEquals(expected_board_printout, str(self.board))
+
 
     def test_morphy_night_at_the_opera_game(self):
         # Morphy vs Duke Karl, 1858 Paris
@@ -965,3 +1137,159 @@ class FullGameTests(Tests):
         self.board.execute_move('d1', 'd8')
         self.assertTrue(self.board.is_game_over)
         self.assertEquals("Checkmate!! White Wins", self.board.outcome)
+
+        expected_board_printout = "8 | ~ n ~ R k b ~ r" + "\n" \
+                                  "7 | p ~ ~ ~ ~ p p p" + "\n" \
+                                  "6 | ~ ~ ~ ~ q ~ ~ ~" + "\n" \
+                                  "5 | ~ ~ ~ ~ p ~ B ~" + "\n" \
+                                  "4 | ~ ~ ~ ~ P ~ ~ ~" + "\n" \
+                                  "3 | ~ ~ ~ ~ ~ ~ ~ ~" + "\n" \
+                                  "2 | P P P ~ ~ P P P" + "\n" \
+                                  "1 | ~ ~ K ~ ~ ~ ~ ~" + "\n" \
+                                  "   ----------------" + "\n" \
+                                  "    a b c d e f g h"
+
+        self.assertEquals(expected_board_printout, str(self.board))
+
+    def test_three_fold_repetition_draw(self):
+        self.board.execute_move('g1', 'f3')
+        self.board.execute_move('b8', 'c6')
+        self.board.execute_move('f3', 'g1')
+        self.board.execute_move('c6', 'b8')
+        self.board.execute_move('g1', 'f3')
+        self.board.execute_move('b8', 'c6')
+        self.board.execute_move('f3', 'g1')
+        self.board.execute_move('c6', 'b8')
+        self.board.execute_move('g1', 'f3')
+        self.assertTrue(self.board.is_game_over)
+        self.assertEquals("Three Fold Repetition! Draw", self.board.outcome)
+
+        expected_board_printout = "8 | r n b q k b n r" + "\n" \
+                                  "7 | p p p p p p p p" + "\n" \
+                                  "6 | ~ ~ ~ ~ ~ ~ ~ ~" + "\n" \
+                                  "5 | ~ ~ ~ ~ ~ ~ ~ ~" + "\n" \
+                                  "4 | ~ ~ ~ ~ ~ ~ ~ ~" + "\n" \
+                                  "3 | ~ ~ ~ ~ ~ N ~ ~" + "\n" \
+                                  "2 | P P P P P P P P" + "\n" \
+                                  "1 | R N B Q K B ~ R" + "\n" \
+                                  "   ----------------" + "\n" \
+                                  "    a b c d e f g h"
+
+        self.assertEquals(expected_board_printout, str(self.board))
+
+    def test_fifty_move_rule_game(self):
+        self.board.execute_move('c2', 'c3')
+        self.assertAlmostEquals(0.0, self.board.fifty_move_counter)
+        self.board.execute_move('c7', 'c6')
+        self.assertAlmostEquals(0.0, self.board.fifty_move_counter)
+        self.board.execute_move('d1', 'a4')  # start counter
+        self.assertAlmostEquals(0.5, self.board.fifty_move_counter)
+        self.board.execute_move('d8', 'a5')
+        self.assertAlmostEquals(1.0, self.board.fifty_move_counter)
+        self.board.execute_move('a4', 'b4')
+        self.board.execute_move('a5', 'b5')
+        self.board.execute_move('b4', 'c4')
+        self.board.execute_move('b5', 'c5')
+        self.board.execute_move('c4', 'd4')
+        self.board.execute_move('c5', 'd5')
+        self.board.execute_move('d4', 'e4')
+        self.board.execute_move('d5', 'e5')
+        self.board.execute_move('e4', 'f4')
+        self.board.execute_move('e5', 'f5')
+        self.board.execute_move('f4', 'g4')
+        self.board.execute_move('f5', 'g5')
+        self.board.execute_move('g4', 'h4')
+        self.board.execute_move('g5', 'g4')
+        self.board.execute_move('h4', 'h5')
+        self.board.execute_move('g4', 'h4')
+        self.board.execute_move('h5', 'g5')
+        self.board.execute_move('h4', 'g4')
+        self.assertAlmostEquals(10.0, self.board.fifty_move_counter)
+        self.board.execute_move('g5', 'f5')
+        self.board.execute_move('g4', 'f4')
+        self.board.execute_move('f5', 'e5')
+        self.board.execute_move('f4', 'e4')
+        self.board.execute_move('e5', 'd5')
+        self.board.execute_move('e4', 'd4')
+        self.board.execute_move('d5', 'c5')
+        self.board.execute_move('d4', 'c4')
+        self.board.execute_move('c5', 'b5')
+        self.board.execute_move('c4', 'b4')
+        self.board.execute_move('b5', 'a4')
+        self.board.execute_move('b4', 'a5')
+        self.board.execute_move('a4', 'b4')
+        self.board.execute_move('a5', 'b5')
+        self.board.execute_move('b4', 'c4')
+        self.board.execute_move('b5', 'c5')
+        self.board.execute_move('c4', 'd4')
+        self.board.execute_move('c5', 'd5')
+        self.board.execute_move('d4', 'e4')
+        self.board.execute_move('d5', 'e5')
+        self.assertAlmostEquals(20.0, self.board.fifty_move_counter)
+        self.board.execute_move('e4', 'f4')
+        self.board.execute_move('e5', 'f5')
+        self.board.execute_move('f4', 'g4')
+        self.board.execute_move('f5', 'g5')
+        self.board.execute_move('g4', 'h4')
+        self.board.execute_move('g5', 'g4')
+        self.board.execute_move('h4', 'h5')
+        self.board.execute_move('g4', 'h4')
+        self.board.execute_move('h5', 'g5')
+        self.board.execute_move('h4', 'g4')
+        self.board.execute_move('g5', 'f5')
+        self.board.execute_move('g4', 'f4')
+        self.board.execute_move('f5', 'e5')
+        self.board.execute_move('f4', 'e4')
+        self.board.execute_move('e5', 'd5')
+        self.board.execute_move('e4', 'd4')
+        self.board.execute_move('d5', 'c5')
+        self.board.execute_move('d4', 'c4')
+        self.board.execute_move('c5', 'b5')
+        self.board.execute_move('c4', 'b4')
+        self.assertAlmostEquals(30.0, self.board.fifty_move_counter)
+        self.board.execute_move('b1', 'a3')  # add knight moves to avoid 3 fold
+        self.board.execute_move('b8', 'a6')
+        self.board.execute_move('b5', 'a4')
+        self.board.execute_move('b4', 'a5')
+        self.board.execute_move('a4', 'b4')
+        self.board.execute_move('a5', 'b5')
+        self.board.execute_move('b4', 'c4')
+        self.board.execute_move('b5', 'c5')
+        self.board.execute_move('c4', 'd4')
+        self.board.execute_move('c5', 'd5')
+        self.board.execute_move('d4', 'e4')
+        self.board.execute_move('d5', 'e5')
+        self.board.execute_move('e4', 'f4')
+        self.board.execute_move('e5', 'f5')
+        self.board.execute_move('f4', 'g4')
+        self.board.execute_move('f5', 'g5')
+        self.board.execute_move('g4', 'h4')
+        self.board.execute_move('g5', 'g4')
+        self.board.execute_move('h4', 'h5')
+        self.board.execute_move('g4', 'h4')
+        self.assertAlmostEquals(40.0, self.board.fifty_move_counter)
+        self.board.execute_move('h5', 'g5')
+        self.board.execute_move('h4', 'g4')
+        self.board.execute_move('g5', 'f5')
+        self.board.execute_move('g4', 'f4')
+        self.board.execute_move('f5', 'e5')
+        self.board.execute_move('f4', 'e4')
+        self.board.execute_move('e5', 'd5')
+        self.board.execute_move('e4', 'd4')
+        self.board.execute_move('d5', 'c5')
+        self.board.execute_move('d4', 'c4')
+        self.board.execute_move('c5', 'b5')
+        self.board.execute_move('c4', 'b4')
+        self.board.execute_move('g1', 'h3')  # add knight moves to avoid 3 fold
+        self.board.execute_move('g8', 'h6')
+        self.board.execute_move('b5', 'a4')
+        self.board.execute_move('b4', 'a5')
+        self.board.execute_move('a4', 'b4')
+        self.board.execute_move('a5', 'b5')
+        self.board.execute_move('b4', 'c4')
+        self.assertAlmostEquals(49.5, self.board.fifty_move_counter)
+        self.board.execute_move('b5', 'c5')  # move fifty
+        self.assertTrue(self.board.is_game_over)
+        self.assertAlmostEquals(50.0, self.board.fifty_move_counter)
+        self.assertEquals("Fifty Moves without pawn move or capture! Draw", self.board.outcome)
+

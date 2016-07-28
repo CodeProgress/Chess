@@ -75,10 +75,7 @@ class Piece(object):
         if contents_of_destination_square != board.EMPTY_SQUARE and contents_of_destination_square.color == self.color:
             return False
 
-        if self.current_square == destination_square:
-            return False
-
-        return True
+        return self.current_square != destination_square
 
     def get_possible_squares_from_transformations(self, board, transformations):
         # used with Knight, Pawn and King

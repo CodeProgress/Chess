@@ -2,10 +2,6 @@ import Pieces
 from copy import deepcopy
 
 
-# Notes:
-#     squares are referred to by algebraic notation
-
-
 class ChessBoard:
     ALL_COLS = 'abcdefgh'
     ALL_ROWS = '12345678'
@@ -360,16 +356,18 @@ class ChessBoard:
     def update_side_to_move(self):
         self.sideToMove ^= 1
 
+    def adjust_fifty_move_counter(self, origin_square, destination_square):
+        if self.is_non_reversible_move(origin_square, destination_square):
+            self.fifty_move_counter = 0
+        else:
+            self.fifty_move_counter += .5  # half move
+
     def execute_move(self, origin_square, destination_square):
         if self.is_valid_move(origin_square, destination_square):
             self.make_move(origin_square, destination_square)
             # game state related housekeeping
             self.update_past_game_states()
             self.update_squares_attacking_king(origin_square, destination_square)
-            if self.is_non_reversible_move(origin_square, destination_square):
-                self.fifty_move_counter = 0
-            else:
-                self.fifty_move_counter += .5  # half move
             if self.is_ending_condition():
                 self.is_game_over = True
             else:
@@ -379,6 +377,7 @@ class ChessBoard:
 
     def make_move(self, origin_square, destination_square):
         # blindly makes move without regard to validation
+        self.adjust_fifty_move_counter(origin_square, destination_square)
         origin_piece = self.get_contents_of_square(origin_square)
         origin_piece.execute_move(self, destination_square)
         self.reset_en_passant_target_square_if_needed()
@@ -427,14 +426,32 @@ class ChessBoard:
             pos_coords = self.get_coordinates_after_applying_traversal_incrementer(pos_coords, incrementer)
         return squares
 
+    def can_capture_attacking_piece(self, square_of_attacking_piece, king_under_attack):
+        if self.is_square_under_attack_from_non_king_piece(square_of_attacking_piece, king_under_attack.color):
+            return True
+
+    def can_block_path_of_attacking_piece(self, square_of_attacking_piece, king_under_attack):
+        attacking_piece = self.get_contents_of_square(square_of_attacking_piece)
+        if type(attacking_piece) == Pieces.Queen \
+                or type(attacking_piece) == Pieces.Bishop \
+                or type(attacking_piece) == Pieces.Rook:
+            squares_along_path = self.get_squares_along_path(
+                king_under_attack.current_square, square_of_attacking_piece)
+            for sq in squares_along_path:
+                if self.can_move_to_square_with_non_king_piece(sq, king_under_attack.color):
+                    return True
+        return False
+
+    def get_squares_attacking_king(self, king):
+        if king.is_white_piece():
+            return self.squaresAttackingWhiteKing
+        return self.squaresAttackingBlackKing
+
     def is_checkmate(self, king):
         if not self.is_king_in_check(king):
             return False
 
-        if king.is_white_piece():
-            squares_attacking_king = self.squaresAttackingWhiteKing
-        else:
-            squares_attacking_king = self.squaresAttackingBlackKing
+        squares_attacking_king = self.get_squares_attacking_king(king)
 
         # King move (for single check and double check)
         if king.all_legal_squares_to_move_to(self):
@@ -442,19 +459,13 @@ class ChessBoard:
 
         if len(squares_attacking_king) == 1:
             square_of_attacking_piece = squares_attacking_king[0]
-            # capture square
-            if self.is_square_under_attack_from_non_king_piece(square_of_attacking_piece, king.color):
+
+            if self.can_capture_attacking_piece(square_of_attacking_piece, king):
                 return False
 
-            # block path
-            attacking_piece = self.get_contents_of_square(square_of_attacking_piece)
-            if type(attacking_piece) == Pieces.Queen \
-                    or type(attacking_piece) == Pieces.Bishop \
-                    or type(attacking_piece) == Pieces.Rook:
-                squares_along_path = self.get_squares_along_path(king.current_square, square_of_attacking_piece)
-                for sq in squares_along_path:
-                    if self.can_move_to_square_with_non_king_piece(sq, king.color):
-                        return False
+            if self.can_block_path_of_attacking_piece(square_of_attacking_piece, king):
+                return False
+
         # if len > 1, that's double check and would have needed to be a king move which was already determined
 
         if self.is_whites_turn():
@@ -482,7 +493,7 @@ class ChessBoard:
 
     def is_fifty_moves_without_pawn_move_or_capture(self):
         if abs(self.fifty_move_counter - 50) < .001:  # fifty_move_counter is double...
-            self.outcome = "Draw"
+            self.outcome = "Fifty Moves without pawn move or capture! Draw"
             return True
         return False
 
@@ -490,7 +501,7 @@ class ChessBoard:
         if str(self) not in self.past_game_states:
             return False
         if self.past_game_states[str(self)] == 3:
-            self.outcome = "Draw"
+            self.outcome = "Three Fold Repetition! Draw"
             return True
         return False
 
@@ -570,7 +581,3 @@ class ChessBoard:
         for col in self.ALL_COLS:
             board_as_str += col + ' '
         return board_as_str[:-1]
-
-
-b = ChessBoard()
-print b
