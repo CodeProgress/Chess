@@ -21,6 +21,14 @@ class Piece(object):
     def is_legal_move(self, board, destination_square):
         raise NotImplementedError
 
+    # abstract method
+    def is_defending_square(self, board, square):
+        raise NotImplementedError
+
+    # abstract method
+    def can_move_to_square(self, board, square, ensure_own_king_safety=True):
+        raise NotImplementedError
+
     def all_legal_squares_to_move_to(self, board):
         possible_squares = self.get_possible_squares_to_move_to(board)
         legal_squares = []
@@ -227,24 +235,32 @@ class Pawn(Piece):
         return destination_square == board.enPassantTargetSquare
 
     def is_legal_move(self, board, destination_square):
-        if not self.is_viable_square_to_move_to(board, destination_square):
+        return self.can_move_to_square(board, destination_square)
+
+    def is_defending_square(self, board, square):
+        return self.can_move_to_square(board, square, False)
+
+    def can_move_to_square(self, board, square, ensure_own_king_safety=True):
+        if not self.is_viable_square_to_move_to(board, square):
             return False
 
-        if self.is_forward_one_square(board, destination_square):
-            if not board.is_square_empty(destination_square):
+        if self.is_forward_one_square(board, square):
+            if not board.is_square_empty(square):
                 return False
-        elif self.is_forward_two_squares(board, destination_square):
+        elif self.is_forward_two_squares(board, square):
             if not self.is_on_starting_square(board):
                 return False
-            if not board.is_empty_orthogonal_from(self.current_square, destination_square):
+            if not board.is_empty_orthogonal_from(self.current_square, square):
                 return False
-            if not board.is_square_empty(destination_square):
+            if not board.is_square_empty(square):
                 return False
 
-        elif not self.is_valid_square_to_attack(board, destination_square):
+        elif not self.is_valid_square_to_attack(board, square):
             return False
 
-        return self.is_own_king_safe_after_move(board, destination_square)
+        if ensure_own_king_safety:
+            return self.is_own_king_safe_after_move(board, square)
+        return True
 
     def get_possible_squares_to_move_to(self, board):
         if self.is_white_piece():
@@ -284,13 +300,21 @@ class Rook(Piece):
             self.isFirstMove = False
 
     def is_legal_move(self, board, destination_square):
-        if not self.is_viable_square_to_move_to(board, destination_square):
+        return self.can_move_to_square(board, destination_square)
+
+    def is_defending_square(self, board, square):
+        return self.can_move_to_square(board, square, False)
+
+    def can_move_to_square(self, board, square, ensure_own_king_safety=True):
+        if not self.is_viable_square_to_move_to(board, square):
             return False
 
-        if not board.is_empty_orthogonal_from(self.current_square, destination_square):
+        if not board.is_empty_orthogonal_from(self.current_square, square):
             return False
 
-        return self.is_own_king_safe_after_move(board, destination_square)
+        if ensure_own_king_safety:
+            return self.is_own_king_safe_after_move(board, square)
+        return True
 
     def get_possible_squares_to_move_to(self, board):
         return self.get_possible_moves_using_incrementer(board, self.orthogonalTransformationsIncrementers)
@@ -327,13 +351,21 @@ class Knight(Piece):
         return False
 
     def is_legal_move(self, board, destination_square):
-        if not self.is_viable_square_to_move_to(board, destination_square):
+        return self.can_move_to_square(board, destination_square)
+
+    def is_defending_square(self, board, square):
+        return self.can_move_to_square(board, square, False)
+
+    def can_move_to_square(self, board, square, ensure_own_king_safety=True):
+        if not self.is_viable_square_to_move_to(board, square):
             return False
 
-        if not self.is_move_in_knight_shape(board, destination_square):
+        if not self.is_move_in_knight_shape(board, square):
             return False
 
-        return self.is_own_king_safe_after_move(board, destination_square)
+        if ensure_own_king_safety:
+            return self.is_own_king_safe_after_move(board, square)
+        return True
 
     def get_possible_squares_to_move_to(self, board):
         return self.get_possible_squares_from_transformations(board, self.transformations)
@@ -356,13 +388,21 @@ class Bishop(Piece):
         pass
 
     def is_legal_move(self, board, destination_square):
-        if not self.is_viable_square_to_move_to(board, destination_square):
+        return self.can_move_to_square(board, destination_square)
+
+    def is_defending_square(self, board, square):
+        return self.can_move_to_square(board, square, False)
+
+    def can_move_to_square(self, board, square, ensure_own_king_safety=True):
+        if not self.is_viable_square_to_move_to(board, square):
             return False
 
-        if not board.is_empty_diagonal_from(self.current_square, destination_square):
+        if not board.is_empty_diagonal_from(self.current_square, square):
             return False
 
-        return self.is_own_king_safe_after_move(board, destination_square)
+        if ensure_own_king_safety:
+            return self.is_own_king_safe_after_move(board, square)
+        return True
 
     def get_possible_squares_to_move_to(self, board):
         return self.get_possible_moves_using_incrementer(board, self.diagonalTransformationIncrementers)
@@ -387,13 +427,21 @@ class Queen(Piece):
             return True
 
     def is_legal_move(self, board, destination_square):
-        if not self.is_viable_square_to_move_to(board, destination_square):
+        return self.can_move_to_square(board, destination_square)
+
+    def is_defending_square(self, board, square):
+        return self.can_move_to_square(board, square, False)
+
+    def can_move_to_square(self, board, square, ensure_own_king_safety=True):
+        if not self.is_viable_square_to_move_to(board, square):
             return False
 
-        if not self.is_move_along_empty_diagonal_or_orthogonal(board, destination_square):
+        if not self.is_move_along_empty_diagonal_or_orthogonal(board, square):
             return False
 
-        return self.is_own_king_safe_after_move(board, destination_square)
+        if ensure_own_king_safety:
+            return self.is_own_king_safe_after_move(board, square)
+        return True
 
     def get_possible_squares_to_move_to(self, board):
         return self.get_possible_moves_using_incrementer(board, self.diagonalAndOrthogonalTransformationIncrementers)
@@ -497,15 +545,23 @@ class King(Piece):
             self.get_color_of_opponent_side())
 
     def is_legal_move(self, board, destination_square):
+        return self.can_move_to_square(board, destination_square)
+
+    def is_defending_square(self, board, square):
+        return self.can_move_to_square(board, square, False)
+
+    def can_move_to_square(self, board, square, ensure_own_king_safety=True):
         # does not take into consideration: check, checkmate, castling
-        if not self.is_viable_square_to_move_to(board, destination_square):
+        if not self.is_viable_square_to_move_to(board, square):
             return False
 
-        if not board.is_one_square_away(self.current_square, destination_square) \
-                and not self.is_legal_castling_move(board, destination_square):
+        if not board.is_one_square_away(self.current_square, square) \
+                and not self.is_legal_castling_move(board, square):
             return False
 
-        return self.is_own_king_safe_after_move(board, destination_square)
+        if ensure_own_king_safety:
+            return self.is_own_king_safe_after_move(board, square)
+        return True
 
     def get_possible_squares_to_move_to(self, board):
         return self.get_possible_squares_from_transformations(board, self.transformations)

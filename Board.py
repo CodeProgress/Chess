@@ -239,7 +239,7 @@ class ChessBoard:
         else:
             square_of_king_after_move = destination_square
 
-        return copy_of_board.is_square_under_attack(
+        return copy_of_board.is_square_defended_by_opponent(
             square_of_king_after_move, king_to_validate.get_color_of_opponent_side())
 
     def is_valid_move_order(self, origin_piece):
@@ -536,6 +536,20 @@ class ChessBoard:
 
     def is_blacks_turn(self):
         return self.sideToMove == 1
+
+    def is_square_defended_by_opponent(self, square, color_of_attacking_side):
+        if color_of_attacking_side == Pieces.Piece.WHITE:
+            piece_list = self.white_pieces_on_the_board
+        else:
+            piece_list = self.black_pieces_on_the_board
+        for piece in piece_list:
+            if type(piece) == Pieces.Pawn:
+                if piece.is_valid_square_to_attack(self, square) and piece.is_defending_square(self, square):
+                    return True
+            else:
+                if piece.is_defending_square(self, square):
+                    return True
+        return False
 
     def is_square_under_attack(self, square, color_of_attacking_side, include_king=True):
         if color_of_attacking_side == Pieces.Piece.WHITE:

@@ -101,6 +101,61 @@ class MaintenanceTests(Tests):
         self.assertEquals(expected_board_printout, actual_board_printout,
                           "Board position printout does not properly reflect executed moves")
 
+    def test_pieces_defending_squares_ignore_safety_of_own_king(self):
+        self.board.execute_move('e2', 'e4')
+        self.board.execute_move('h7', 'h5')
+        self.board.execute_move('d2', 'd4')
+        self.board.execute_move('d7', 'd6')
+        self.board.execute_move('b1', 'c3')
+        self.board.execute_move('c8', 'd7')
+        self.board.execute_move('g1', 'f3')
+        self.board.execute_move('d7', 'f5')
+        self.board.execute_move('e4', 'f5')
+        self.board.execute_move('a7', 'a5')
+        self.board.execute_move('c1', 'f4')
+        self.board.execute_move('f7', 'f6')
+        self.board.execute_move('f1', 'c4')
+        self.board.execute_move('e7', 'e5')
+        self.board.execute_move('d4', 'e5')
+        self.board.execute_move('f6', 'e5')
+        self.board.execute_move('d1', 'e2')
+        self.board.execute_move('f8', 'e7')
+        self.board.execute_move('f4', 'e5')
+        self.board.execute_move('d6', 'e5')
+        self.board.execute_move('e2', 'e5')
+        self.board.execute_move('e8', 'd7')
+        self.board.execute_move('e1', 'c1')
+        self.board.execute_move('e7', 'd6')
+        self.board.execute_move('e5', 'e6')
+        self.board.execute_move('d7', 'c6')
+        self.board.execute_move('f3', 'd4')
+        # Potential move would pin attacking white knight to white king,
+        # however, white knight is still "defending" the square of the black king
+        # because a pinned piece can still defend squares and therefore the black king is still in check
+        self.verify_illegal_move_is_not_made(Pieces.Queen, 'd8', 'g5')
+        self.verify_legal_move(Pieces.King, 'c6', 'c5')
+        self.board.execute_move('c3', 'a4')
+        self.board.execute_move('c5', 'b4')
+        self.board.execute_move('c4', 'b5')
+        self.board.execute_move('d8', 'g5')
+        self.board.execute_move('e6', 'e3')
+        self.board.execute_move('d6', 'f4')
+        self.board.execute_move('a2', 'a3')
+        self.assertTrue(self.board.is_game_over)
+        self.assertEquals("Checkmate!! White Wins", self.board.outcome)
+
+        expected_board_printout = "8 | r n ~ ~ ~ ~ n r" + "\n" \
+                                  "7 | ~ p p ~ ~ ~ p ~" + "\n" \
+                                  "6 | ~ ~ ~ ~ ~ ~ ~ ~" + "\n" \
+                                  "5 | p B ~ ~ ~ P q p" + "\n" \
+                                  "4 | N k ~ N ~ b ~ ~" + "\n" \
+                                  "3 | P ~ ~ ~ Q ~ ~ ~" + "\n" \
+                                  "2 | ~ P P ~ ~ P P P" + "\n" \
+                                  "1 | ~ ~ K R ~ ~ ~ R" + "\n" \
+                                  "   ----------------" + "\n" \
+                                  "    a b c d e f g h"
+        self.assertEquals(expected_board_printout, str(self.board))
+
 
 class MoveSpecificTests(Tests):
     def setUp(self):
@@ -956,7 +1011,6 @@ class FullGameTests(Tests):
                                   "    a b c d e f g h"
         self.assertEquals(expected_board_printout, str(self.board))
 
-
     def test_stalemate_game(self):
         self.board.execute_move('h2', 'h4')
         self.board.execute_move('h7', 'h5')
@@ -1098,7 +1152,6 @@ class FullGameTests(Tests):
                                   "    a b c d e f g h"
 
         self.assertEquals(expected_board_printout, str(self.board))
-
 
     def test_morphy_night_at_the_opera_game(self):
         # Morphy vs Duke Karl, 1858 Paris
@@ -1292,4 +1345,3 @@ class FullGameTests(Tests):
         self.assertTrue(self.board.is_game_over)
         self.assertAlmostEquals(50.0, self.board.fifty_move_counter)
         self.assertEquals("Fifty Moves without pawn move or capture! Draw", self.board.outcome)
-
