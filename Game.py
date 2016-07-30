@@ -1,5 +1,6 @@
 from Board import ChessBoard
 from Engine import Engine
+# import cProfile
 
 
 class Game:
@@ -22,6 +23,12 @@ class Game:
 
         print str(self.board) + "\n" + "Game Over! {}".format(self.board.outcome)
 
+    def auto_play(self):
+        while not self.is_game_over():
+            self.play_ai_move()
+
+        print str(self.board) + "\n" + "Game Over! {}".format(self.board.outcome)
+
     def is_game_over(self):
         return self.board.is_game_over
 
@@ -39,3 +46,4 @@ class Game:
 g = Game()
 
 g.play_game(True, True)
+# cProfile.run('g.auto_play()')
