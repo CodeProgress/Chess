@@ -10,9 +10,6 @@ class Piece(object):
         assert self.is_white_piece() or self.is_black_piece()
         self.current_square = current_square
 
-    # def __eq__(self, other):
-    #     return type(self) == other
-
     # abstract method
     def get_possible_squares_to_move_to(self, board):
         raise NotImplementedError
@@ -54,6 +51,7 @@ class Piece(object):
         board.clear_square(origin_square)
 
     def special_move_maintenance_before_executing_move(self, board, destination_square):
+        # override where needed, otherwise no maintenance will take place
         pass
 
     def is_white_piece(self):
@@ -124,8 +122,13 @@ class Piece(object):
             king_to_verify = board.blackKing
         return not board.is_king_in_check_after_simulating_move(self.current_square, destination_square, king_to_verify)
 
-    def __str__(self):
+    def get_name(self):
         raise NotImplementedError
+
+    def __str__(self):
+        if self.is_white_piece():
+            return self.get_name().upper()
+        return self.get_name().lower()
 
 
 class Pawn(Piece):
@@ -269,11 +272,8 @@ class Pawn(Piece):
             transformations = self.transformationsBlack
         return self.get_possible_squares_from_transformations(board, transformations)
 
-    def __str__(self):
-        if self.color == 'w':
-            return 'P'
-        else:
-            return 'p'
+    def get_name(self):
+        return 'p'
 
 
 class Rook(Piece):
@@ -319,11 +319,8 @@ class Rook(Piece):
     def get_possible_squares_to_move_to(self, board):
         return self.get_possible_moves_using_incrementer(board, self.orthogonalTransformationsIncrementers)
 
-    def __str__(self):
-        if self.color == 'w':
-            return 'R'
-        else:
-            return 'r'
+    def get_name(self):
+        return 'r'
 
 
 class Knight(Piece):
@@ -370,11 +367,8 @@ class Knight(Piece):
     def get_possible_squares_to_move_to(self, board):
         return self.get_possible_squares_from_transformations(board, self.transformations)
 
-    def __str__(self):
-        if self.color == 'w':
-            return 'N'
-        else:
-            return 'n'
+    def get_name(self):
+        return 'n'
 
 
 class Bishop(Piece):
@@ -407,11 +401,8 @@ class Bishop(Piece):
     def get_possible_squares_to_move_to(self, board):
         return self.get_possible_moves_using_incrementer(board, self.diagonalTransformationIncrementers)
 
-    def __str__(self):
-        if self.color == 'w':
-            return 'B'
-        else:
-            return 'b'
+    def get_name(self):
+        return 'b'
 
 
 class Queen(Piece):
@@ -446,11 +437,8 @@ class Queen(Piece):
     def get_possible_squares_to_move_to(self, board):
         return self.get_possible_moves_using_incrementer(board, self.diagonalAndOrthogonalTransformationIncrementers)
 
-    def __str__(self):
-        if self.color == 'w':
-            return 'Q'
-        else:
-            return 'q'
+    def get_name(self):
+        return 'q'
 
 
 class King(Piece):
@@ -566,8 +554,5 @@ class King(Piece):
     def get_possible_squares_to_move_to(self, board):
         return self.get_possible_squares_from_transformations(board, self.transformations)
 
-    def __str__(self):
-        if self.color == 'w':
-            return 'K'
-        else:
-            return 'k'
+    def get_name(self):
+        return 'k'
