@@ -289,8 +289,8 @@ class ChessBoard:
         col_inc = middle_col - start_col
 
         divider_to_get_back_to_one_to_one_ratio = max(abs(row_inc), abs(col_inc))
-        row_inc /= divider_to_get_back_to_one_to_one_ratio
-        col_inc /= divider_to_get_back_to_one_to_one_ratio
+        row_inc //= divider_to_get_back_to_one_to_one_ratio
+        col_inc //= divider_to_get_back_to_one_to_one_ratio
 
         return row_inc, col_inc
 

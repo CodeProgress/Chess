@@ -1,7 +1,9 @@
-# How to Run
+# Python Chess
 
+
+## How to Run
 * Navigate to root folder
 * ~$ python Game.py
 
-# Requirements
-* Python 2.7
+## Requirements
+* Python 3.8+
